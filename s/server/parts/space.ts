@@ -1,6 +1,8 @@
 
 import {collect} from "@e280/kv"
-import {Hex, sub} from "@e280/stz"
+import {dedupe, Hex, sub} from "@e280/stz"
+import {ExposedError} from "@e280/renraku/node"
+
 import {constants} from "../../constants.js"
 import {Database, Drop, Void} from "./types.js"
 
@@ -10,9 +12,7 @@ export class Space {
 
 	constructor(private database: Database) {}
 
-	async makeVoid(v: Void) {
-		if (await this.database.voids.has(v.id))
-			throw new Error("void already exists")
+	async setVoid(v: Void) {
 		await this.database.voids.set(v.id, v)
 		this.onVoid.pub(v)
 		return v
@@ -20,6 +20,19 @@ export class Space {
 
 	async getVoid(id: string) {
 		return this.database.voids.get(id)
+	}
+
+	async accessVoidAndMarkSeen(voidId: string, userId: string) {
+		const v = await this.database.voids.require(voidId)
+		const isAllowed = (
+			!v.private ||
+			v.ownerId === userId ||
+			v.private.includes(userId)
+		)
+		if (!isAllowed)
+			throw new ExposedError("you are forbidden from this private void")
+		v.seen = dedupe([...v.seen, userId]).slice(-constants.seenLimit)
+		await this.database.voids.set(voidId, v)
 	}
 
 	async getDrops(voidId: string) {

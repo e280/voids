@@ -1,6 +1,6 @@
 
-import {AsFns, Secure} from "@e280/renraku"
-import {Void, Drop} from "../parts/types.js"
+import {AsFns, Secure} from "@e280/renraku/node"
+import {Void, Drop, VoidOptions} from "../parts/types.js"
 
 export type Auth = {
 	claimToken: string
@@ -9,19 +9,20 @@ export type Auth = {
 export type AuthClaim = {}
 
 export type Serverside = AsFns<{
-	anon: {
+	user: Secure<Auth, {
+		setVoid(options: VoidOptions): Promise<Void>
 		getVoid(voidId: string): Promise<Void | undefined>
+
+		drop(voidId: string, payload: string): Promise<Drop>
+		getDrops(voidId: string): Promise<Drop[]>
+
 		followVoid(voidId: string): Promise<void>
 		unfollowVoid(voidId: string): Promise<void>
-		getDrops(voidId: string): Promise<Drop[]>
-	}
-	user: Secure<Auth, {
-		makeVoid(id: string, label: string): Promise<Void>
-		drop(voidId: string, payload: string): Promise<Drop>
 	}>
 }>
 
 export type Clientside = {
+	void(v: Void): Promise<void>
 	drop(voidId: string, drop: Drop): Promise<void>
 }
 

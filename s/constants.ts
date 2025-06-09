@@ -2,6 +2,7 @@
 import {Time} from "@e280/authlocal/core"
 
 export const constants = {
+	seenLimit: 100,
 	maxDropsPerVoid: 100,
 	dropLifespan: Time.hours(24),
 	idleVoidLifespan: Time.days(30),

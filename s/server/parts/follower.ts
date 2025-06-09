@@ -11,10 +11,20 @@ export class Follower {
 
 	followVoid(voidId: string) {
 		this.#watchers.guarantee(voidId, () => {
-			return this.space.onDrop(async(id, drop) => {
+			const stopVoids = this.space.onVoid(async(v) => {
+				if (v.id === voidId)
+					await this.clientside.void(v)
+			})
+
+			const stopDrops = this.space.onDrop(async(id, drop) => {
 				if (id === voidId)
 					await this.clientside.drop(voidId, drop)
 			})
+
+			return () => {
+				stopVoids()
+				stopDrops()
+			}
 		})
 	}
 

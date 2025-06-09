@@ -9,6 +9,16 @@ export type Database = {
 /** a chat room */
 export type Void = {
 
+	/** all user ids who have ever viewed this void */
+	seen: string[]
+
+	/** when was the latest activity */
+	latestActivityTime: number
+
+} & VoidOptions
+
+export type VoidOptions = {
+
 	/** hash of the symmetric key */
 	id: string
 
@@ -18,14 +28,14 @@ export type Void = {
 	/** people-friendly text label */
 	label: string
 
-	/** when was the latest activity */
-	latestActivityTime: number
+	/** user ids allowed to see this void, or null for public void */
+	private: null | string[]
 }
 
 /** an event in a chatroom, like a message or something */
 export type Drop = {
 	id: string
 	time: number
-	payload: string
+	payload: unknown
 }
 

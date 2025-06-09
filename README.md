@@ -3,28 +3,26 @@
 
 👉 https://voids.e280.org/ 👈
 
-**voids** is a web app for secret group chats
+### **voids** is for secret group chats
 - a *void* is an ephemeral e2e encrypted chatroom
 - the server can't read your messages
 - high-grade cryption for your kinky sexting or forbidden memes
 
-voids can be public or private
-- public voids — anyone with the link can read + post
-- private voids — access granted to specific user ids
+### public or private voids
+- public — anyone with the link can read + post
+- private — access granted to specific user ids
 
-user-sovereign, local-first
-- auth empowered by [authlocal.org](https://authlocal.org/)
-- each void tracks latest 100 authlocal ids who have been peeking
-- this helps you notice if an outsider broke into your meme lair
-
-nothing lasts forever
-- voids only store the latest 100 messages
+### nothing lasts forever
 - messages expire after 24 hours
 - voids expire after 30 days of inactivity
+- voids only store the latest 1024 messages
 
-privacy-focused
-- no tracking, no data collection
-- only analytic we have is the current void count on homepage
+### privacy-focused
+- auth empowered by [authlocal.org](https://authlocal.org/)
+- no tracking, no data collection shenanigans
+- no ulterior motives — cypherpunk is a vibe, not a product
+- only analytic is the active void count on homepage
+- maybe we'll count monthly active users sooner or later
 
 <br/>
 

@@ -1,7 +1,7 @@
 
 import {collect} from "@e280/kv"
 import {Hex, sub} from "@e280/stz"
-import {constants} from "./constants.js"
+import {constants} from "../../constants.js"
 import {Database, Egg, Carton} from "./types.js"
 
 export class Nest {

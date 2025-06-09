@@ -2,8 +2,8 @@
 import {Authorize, ExposedError, secure} from "@e280/renraku"
 import {validLabel, verifyClaim} from "@e280/authlocal/core"
 
-import {Nest} from "../nest.js"
-import {constants} from "../constants.js"
+import {Nest} from "../parts/nest.js"
+import {constants} from "../../constants.js"
 import {AuthClaim, Clientside, Serverside} from "./schema.js"
 
 export const setupServerside = (nest: Nest, _clientside: Clientside): Serverside => ({

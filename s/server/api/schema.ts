@@ -1,6 +1,6 @@
 
 import {AsFns, Secure} from "@e280/renraku"
-import {Carton, Egg} from "../types.js"
+import {Carton, Egg} from "../parts/types.js"
 
 export type Auth = {
 	claimToken: string

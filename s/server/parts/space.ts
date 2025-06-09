@@ -7,6 +7,7 @@ import {constants} from "../../constants.js"
 import {Database, Drop, Void} from "./types.js"
 
 export class Space {
+	voidCount = 0
 	onVoid = sub<[Void]>()
 	onDrop = sub<[voidId: string, drop: Drop]>()
 
@@ -15,6 +16,7 @@ export class Space {
 	async setVoid(v: Void) {
 		await this.database.voids.set(v.id, v)
 		this.onVoid.pub(v)
+		this.#updateVoidCount()
 		return v
 	}
 
@@ -85,6 +87,14 @@ export class Space {
 		}
 
 		await this.database.voids.del(...expiredIds)
+		this.#updateVoidCount()
+	}
+
+	async #updateVoidCount() {
+		let count = 0
+		for await (const _ of this.database.voids.keys())
+			count += 1
+		this.voidCount = count
 	}
 }
 

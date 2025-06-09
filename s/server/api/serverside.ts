@@ -13,6 +13,12 @@ export const setupServerside = (
 		_clientside: Clientside,
 	): Serverside => ({
 
+	anon: {
+		async getVoidCount() {
+			return space.voidCount
+		},
+	},
+
 	user: secure(async auth => {
 		const {proof} = await verifyClaim<AuthClaim>({
 			claimToken: auth.claimToken,

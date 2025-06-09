@@ -9,6 +9,10 @@ export type Auth = {
 export type AuthClaim = {}
 
 export type Serverside = AsFns<{
+	anon: {
+		getVoidCount(): Promise<number>
+	}
+
 	user: Secure<Auth, {
 		setVoid(options: VoidOptions): Promise<Void>
 		getVoid(voidId: string): Promise<Void | undefined>

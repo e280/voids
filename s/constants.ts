@@ -7,6 +7,6 @@ export const constants = {
 	dropLifespan: Time.hours(24),
 	idleVoidLifespan: Time.days(30),
 	appOrigin: "https://voids.e280.org",
-	serverOrigin: "https://relay.voids.e280.org",
+	serverOrigin: "https://server.voids.e280.org",
 }
 

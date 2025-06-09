@@ -1,18 +1,28 @@
 
-import {Authorize, ExposedError, secure} from "@e280/renraku"
 import {validLabel, verifyClaim} from "@e280/authlocal/core"
+import {Authorize, ExposedError, secure} from "@e280/renraku"
 
 import {Nest} from "../parts/nest.js"
+import {Follower} from "../parts/follower.js"
 import {constants} from "../../constants.js"
 import {AuthClaim, Clientside, Serverside} from "./schema.js"
 
-export const setupServerside = (nest: Nest, _clientside: Clientside): Serverside => ({
+export const setupServerside = (
+		nest: Nest,
+		follower: Follower,
+		_clientside: Clientside,
+	): Serverside => ({
+
 	anon: {
 		async getCarton(id) {
 			return nest.getCarton(id)
 		},
-		async followCarton() {},
-		async unfollowCarton() {},
+		async followCarton(id) {
+			follower.followCarton(id)
+		},
+		async unfollowCarton(id) {
+			follower.unfollowCarton(id)
+		},
 		async getEggs(cartonId) {
 			return nest.getEggs(cartonId)
 		},

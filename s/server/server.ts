@@ -6,6 +6,7 @@ import {endpoint, remote, WebSocketServer} from "@e280/renraku/node"
 import {Core} from "./core.js"
 import {Clientside} from "./api/schema.js"
 import {setupServerside} from "./api/serverside.js"
+import { Follower } from "./parts/follower.js"
 
 const level = new LevelDriver("./db")
 const kv = new Kv(level)
@@ -16,9 +17,17 @@ const wss = new WebSocketServer({
 		const clientside = remote<Clientside>({
 			endpoint: connection.remoteEndpoint,
 		})
+		const follower = new Follower(core.nest, clientside)
+		const serverside = setupServerside(
+			core.nest,
+			follower,
+			clientside,
+		)
 		return {
-			localEndpoint: endpoint({fns: setupServerside(core.nest, clientside)}),
-			closed: () => {},
+			localEndpoint: endpoint({fns: serverside}),
+			closed: () => {
+				follower.dispose()
+			},
 		}
 	},
 })

@@ -6,7 +6,7 @@ import {Database, Egg, Carton} from "./types.js"
 
 export class Nest {
 	onCarton = sub<[Carton]>()
-	onEgg = sub<[{cartonId: string, egg: Egg}]>()
+	onEgg = sub<[cartonId: string, egg: Egg]>()
 
 	constructor(private database: Database) {}
 
@@ -58,7 +58,7 @@ export class Nest {
 		}
 
 		await this.database.eggs(cartonId).set(egg.id, egg)
-		this.onEgg.pub({cartonId, egg})
+		this.onEgg.pub(cartonId, egg)
 		return egg
 	}
 

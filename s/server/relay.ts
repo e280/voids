@@ -1,6 +1,6 @@
 
 import {Kv} from "@e280/kv"
-import {Nest} from "./parts/nest.js"
+import {Space} from "./parts/space.js"
 import {Clientside} from "./api/schema.js"
 import {Follower} from "./parts/follower.js"
 import {makeDatabase} from "./parts/database.js"
@@ -8,12 +8,12 @@ import {setupServerside} from "./api/serverside.js"
 
 export function makeRelay(kv: Kv) {
 	const database = makeDatabase(kv)
-	const nest = new Nest(database)
+	const space = new Space(database)
 
 	async function accept(clientside: Clientside) {
-		const follower = new Follower(nest, clientside)
+		const follower = new Follower(space, clientside)
 		const serverside = setupServerside(
-			nest,
+			space,
 			follower,
 			clientside,
 		)

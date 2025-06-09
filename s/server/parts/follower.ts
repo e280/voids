@@ -1,27 +1,27 @@
 
 import {MapG} from "@e280/stz"
 
-import {Nest} from "./nest.js"
+import {Space} from "./space.js"
 import {Clientside} from "../api/schema.js"
 
 export class Follower {
 	#watchers = new MapG<string, () => void>()
 
-	constructor(private nest: Nest, private clientside: Clientside) {}
+	constructor(private space: Space, private clientside: Clientside) {}
 
-	followCarton(cartonId: string) {
-		this.#watchers.guarantee(cartonId, () => {
-			return this.nest.onEgg(async(cid, egg) => {
-				if (cid === cartonId)
-					await this.clientside.freshEgg(cartonId, egg)
+	followVoid(voidId: string) {
+		this.#watchers.guarantee(voidId, () => {
+			return this.space.onDrop(async(id, drop) => {
+				if (id === voidId)
+					await this.clientside.drop(voidId, drop)
 			})
 		})
 	}
 
-	unfollowCarton(cartonId: string) {
-		const stop = this.#watchers.require(cartonId)
+	unfollowVoid(voidId: string) {
+		const stop = this.#watchers.require(voidId)
 		stop()
-		this.#watchers.delete(cartonId)
+		this.#watchers.delete(voidId)
 	}
 
 	dispose() {

@@ -1,6 +1,6 @@
 
 import {AsFns, Secure} from "@e280/renraku"
-import {Carton, Egg} from "../parts/types.js"
+import {Void, Drop} from "../parts/types.js"
 
 export type Auth = {
 	claimToken: string
@@ -10,18 +10,18 @@ export type AuthClaim = {}
 
 export type Serverside = AsFns<{
 	anon: {
-		getCarton(cartonId: string): Promise<Carton | undefined>
-		followCarton(cartonId: string): Promise<void>
-		unfollowCarton(cartonId: string): Promise<void>
-		getEggs(cartonId: string): Promise<Egg[]>
+		getVoid(voidId: string): Promise<Void | undefined>
+		followVoid(voidId: string): Promise<void>
+		unfollowVoid(voidId: string): Promise<void>
+		getDrops(voidId: string): Promise<Drop[]>
 	}
 	user: Secure<Auth, {
-		createCarton(id: string, label: string): Promise<Carton>
-		addEgg(cartonId: string, payload: string): Promise<Egg>
+		makeVoid(id: string, label: string): Promise<Void>
+		drop(voidId: string, payload: string): Promise<Drop>
 	}>
 }>
 
 export type Clientside = {
-	freshEgg(cartonId: string, egg: Egg): Promise<void>
+	drop(voidId: string, drop: Drop): Promise<void>
 }
 

@@ -2,14 +2,14 @@
 import {Kv} from "@e280/kv"
 
 export type Database = {
-	cartons: Kv<Carton>
-	eggs: (eggId: string) => Kv<Egg>
+	voids: Kv<Void>
+	drops: (dropId: string) => Kv<Drop>
 }
 
 /** a chat room */
-export type Carton = {
+export type Void = {
 
-	/** hash of the carton's symmetric key */
+	/** hash of the symmetric key */
 	id: string
 
 	/** user id who owns this room */
@@ -23,7 +23,7 @@ export type Carton = {
 }
 
 /** an event in a chatroom, like a message or something */
-export type Egg = {
+export type Drop = {
 	id: string
 	time: number
 	payload: string

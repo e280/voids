@@ -2,29 +2,29 @@
 import {validLabel, verifyClaim} from "@e280/authlocal/core"
 import {Authorize, ExposedError, secure} from "@e280/renraku"
 
-import {Nest} from "../parts/nest.js"
+import {Space} from "../parts/space.js"
 import {Follower} from "../parts/follower.js"
 import {constants} from "../../constants.js"
 import {AuthClaim, Clientside, Serverside} from "./schema.js"
 
 export const setupServerside = (
-		nest: Nest,
+		space: Space,
 		follower: Follower,
 		_clientside: Clientside,
 	): Serverside => ({
 
 	anon: {
-		async getCarton(id) {
-			return nest.getCarton(id)
+		async getVoid(id) {
+			return space.getVoid(id)
 		},
-		async followCarton(id) {
-			follower.followCarton(id)
+		async followVoid(id) {
+			follower.followVoid(id)
 		},
-		async unfollowCarton(id) {
-			follower.unfollowCarton(id)
+		async unfollowVoid(id) {
+			follower.unfollowVoid(id)
 		},
-		async getEggs(cartonId) {
-			return nest.getEggs(cartonId)
+		async getDrops(voidId) {
+			return space.getDrops(voidId)
 		},
 	},
 
@@ -36,10 +36,10 @@ export const setupServerside = (
 		})
 		return <Authorize<Serverside["user"]>>{
 
-			async createCarton(id: string, label: string) {
+			async makeVoid(id: string, label: string) {
 				if (!validLabel(label))
 					throw new ExposedError("invalid label")
-				return nest.createCarton({
+				return space.makeVoid({
 					id,
 					label,
 					ownerId: proof.nametag.id,
@@ -47,8 +47,8 @@ export const setupServerside = (
 				})
 			},
 
-			async addEgg(cartonId: string, payload: string) {
-				return nest.addEgg(cartonId, payload)
+			async drop(voidId: string, payload: string) {
+				return space.drop(voidId, payload)
 			},
 		}
 	})

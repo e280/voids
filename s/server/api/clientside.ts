@@ -2,8 +2,8 @@
 import {Clientside} from "./schema.js"
 
 export const setupClientside = (): Clientside => ({
-	async freshEgg(cartonId, egg) {
-		console.log("fresh egg!", cartonId, egg)
+	async drop(voidId, drop) {
+		console.log("fresh drop", voidId, drop)
 	},
 })
 

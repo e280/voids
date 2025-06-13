@@ -6,7 +6,7 @@
 > app for ephemeral encrypted chats..  
 > &nbsp; &nbsp; 👉 https://voids.e280.org/ 👈  
 
-a *"void"* is an end-to-end encrypted chatroom..  
+**a *"void"* is an end-to-end encrypted chatroom..**  
 high-grade cryption for your kinky sexting, forbidden memes.. or maybe just your basket-weaving club..  
 
 **privacy-focused.**  

@@ -12,6 +12,7 @@ export type EncryptedId = string
 /** arbitrary data that has been encrypted by the symkey (server doesn't have it) */
 export type EncryptedData = string
 
+export type Peeker = [userId: EncryptedId, time: number]
 export type Role = "admin" | "mod" | "muted"
 export type RoleAssignment = [userId: EncryptedId, role: Role[]]
 
@@ -28,7 +29,7 @@ export type Void = {
 	roles: RoleAssignment[]
 
 	/** user ids who have read the void */
-	peekers: EncryptedId[]
+	peekers: Peeker[]
 
 	/** when was the latest activity */
 	latestActivityTime: number

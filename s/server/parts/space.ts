@@ -1,10 +1,11 @@
 
 import {collect} from "@e280/kv"
-import {dedupe, Hex, sub} from "@e280/stz"
+import {Hex, sub} from "@e280/stz"
 
 import {constants} from "../../constants.js"
+import {normalizePeekers} from "./peekers.js"
 import {Capabilities} from "./capabilities.js"
-import {Database, Drop, Void} from "./types.js"
+import {Database, Drop, Peeker, Void} from "./types.js"
 
 export class Space {
 	voidCount = 0
@@ -39,7 +40,8 @@ export class Space {
 
 	async peekIntoVoid(voidId: string, userId: string) {
 		const v = await this.database.voids.require(voidId)
-		v.peekers = dedupe([...v.peekers, userId]).slice(-constants.seenLimit)
+		const newPeeker: Peeker = [userId, Date.now()]
+		v.peekers = normalizePeekers([...v.peekers, newPeeker])
 		await this.database.voids.set(voidId, v)
 		return v
 	}

@@ -45,14 +45,18 @@ export const setupServerside = (
 			async createVoid(voidId, options) {
 				const already = await space.getVoid(voidId)
 				if (already) throw new Error("this void already exists")
+
 				const roles = new RoleKeeper()
 				roles.get(userId).add("admin")
+
+				const now = Date.now()
+
 				return space.setVoid({
 					id: voidId,
 					pinned: options.pinned,
 					roles: roles.toAssignments(),
-					latestActivityTime: Date.now(),
-					peekers: [userId],
+					latestActivityTime: now,
+					peekers: [[userId, now]],
 				})
 			},
 

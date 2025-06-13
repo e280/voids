@@ -1,21 +1,22 @@
 
 import {collect} from "@e280/kv"
 import {dedupe, Hex, sub} from "@e280/stz"
-import {ExposedError} from "@e280/renraku/node"
 
 import {constants} from "../../constants.js"
+import {Capabilities} from "./capabilities.js"
 import {Database, Drop, Void} from "./types.js"
 
 export class Space {
 	voidCount = 0
-	onVoid = sub<[Void]>()
+	onVoid = sub<[voidId: string, Void | null]>()
 	onDrop = sub<[voidId: string, drop: Drop]>()
+	capabilities = new Capabilities()
 
 	constructor(private database: Database) {}
 
 	async setVoid(v: Void) {
 		await this.database.voids.set(v.id, v)
-		this.onVoid.pub(v)
+		this.onVoid.pub(v.id, v)
 		this.#updateVoidCount()
 		return v
 	}
@@ -24,20 +25,26 @@ export class Space {
 		return this.database.voids.get(id)
 	}
 
-	async accessVoidAndMarkSeen(voidId: string, userId: string) {
-		const v = await this.database.voids.require(voidId)
-		const isAllowed = (
-			!v.private ||
-			v.ownerId === userId ||
-			v.private.includes(userId)
-		)
-		if (!isAllowed)
-			throw new ExposedError("you are forbidden from this private void")
-		v.seen = dedupe([...v.seen, userId]).slice(-constants.seenLimit)
-		await this.database.voids.set(voidId, v)
+	async deleteVoids(...ids: string[]) {
+		await Promise.all(ids.map(async id => this.wipeVoidDrops(id)))
+		await this.database.voids.del(...ids)
+		this.#updateVoidCount()
+		for (const id of ids)
+			this.onVoid.pub(id, null)
 	}
 
-	async getDrops(voidId: string) {
+	async requireVoid(id: string) {
+		return this.database.voids.require(id)
+	}
+
+	async peekIntoVoid(voidId: string, userId: string) {
+		const v = await this.database.voids.require(voidId)
+		v.peekers = dedupe([...v.peekers, userId]).slice(-constants.seenLimit)
+		await this.database.voids.set(voidId, v)
+		return v
+	}
+
+	async listDropsInVoid(voidId: string) {
 		await this.database.voids.require(voidId)
 		const drops = this.database.drops(voidId)
 		const all = await collect(drops.values())
@@ -59,12 +66,11 @@ export class Space {
 		return recent
 	}
 
-	async drop(voidId: string, payload: string) {
+	async postDrop(v: Void, payload: string) {
 		const now = Date.now()
 
-		const v = await this.database.voids.require(voidId)
 		v.latestActivityTime = now
-		await this.database.voids.set(voidId, v)
+		await this.database.voids.set(v.id, v)
 
 		const drop: Drop = {
 			id: Hex.random(32),
@@ -72,9 +78,17 @@ export class Space {
 			payload,
 		}
 
-		await this.database.drops(voidId).set(drop.id, drop)
-		this.onDrop.pub(voidId, drop)
+		await this.database.drops(v.id).set(drop.id, drop)
+		this.onDrop.pub(v.id, drop)
 		return drop
+	}
+
+	async deleteDrops(voidId: string, dropIds: string[]) {
+		await this.database.drops(voidId).del(...dropIds)
+	}
+
+	async wipeVoidDrops(voidId: string) {
+		await this.database.drops(voidId).clear()
 	}
 
 	async deleteExpiredVoids() {
@@ -86,8 +100,7 @@ export class Space {
 				expiredIds.add(v.id)
 		}
 
-		await this.database.voids.del(...expiredIds)
-		this.#updateVoidCount()
+		await this.deleteVoids(...expiredIds)
 	}
 
 	async #updateVoidCount() {

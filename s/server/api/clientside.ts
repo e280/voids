@@ -2,11 +2,11 @@
 import {Clientside} from "./schema.js"
 
 export const setupClientside = (): Clientside => ({
-	async drop(voidId, drop) {
+	async pulseDrop(voidId, drop) {
 		console.log("fresh drop", voidId, drop)
 	},
-	async void(v) {
-		console.log("void updated", v)
+	async pulseVoid(voidId, v) {
+		console.log("void updated", voidId, v)
 	},
 })
 

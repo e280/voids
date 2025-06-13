@@ -6,36 +6,44 @@ export type Database = {
 	drops: (dropId: string) => Kv<Drop>
 }
 
+/** an authlocal id that has been encrypted by the symkey (server doesn't have it) */
+export type EncryptedId = string
+
+/** arbitrary data that has been encrypted by the symkey (server doesn't have it) */
+export type EncryptedData = string
+
+export type Role = "admin" | "mod" | "muted"
+export type RoleAssignment = [userId: EncryptedId, role: Role[]]
+
 /** a chat room */
 export type Void = {
-
-	/** all user ids who have ever viewed this void */
-	seen: string[]
-
-	/** when was the latest activity */
-	latestActivityTime: number
-
-} & VoidOptions
-
-export type VoidOptions = {
 
 	/** hash of the symmetric key */
 	id: string
 
-	/** user id who owns this room */
-	ownerId: string
+	/** encrypted pinned data payload (includes the void label) */
+	pinned: EncryptedData
 
-	/** people-friendly text label */
-	label: string
+	/** role assigments for user ids */
+	roles: RoleAssignment[]
 
-	/** user ids allowed to see this void, or null for public void */
-	private: null | string[]
+	/** user ids who have read the void */
+	peekers: EncryptedId[]
+
+	/** when was the latest activity */
+	latestActivityTime: number
 }
 
 /** an event in a chatroom, like a message or something */
 export type Drop = {
+
+	/** server-assigned unique id for this drop */
 	id: string
+
+	/** server-assigned timestamp when drop was posted */
 	time: number
-	payload: unknown
+
+	/** encrypted data (includes the void label) */
+	payload: EncryptedData
 }
 

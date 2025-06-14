@@ -16,7 +16,7 @@ user-sovereign cryptographic logins via e280's [authlocal](https://github.com/e2
 your authlocal id will remain as anonymous as you can keep it..  
 
 **nothing lasts forever.**  
-messages vanish in 7 days.. idle voids dissolve in 30 days..  
+messages vanish in 8 days.. idle voids dissolve in 32 days..  
 
 **grow your community.**  
 a void contains nestable *"bubble"* chat rooms..  

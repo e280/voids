@@ -16,7 +16,7 @@ your authlocal id will remain as anonymous as you can keep it..
 **nothing lasts forever.**  
 messages vanish in 8 days.. idle voids dissolve in 32 days..  
 
-**a *"void"* is a little community.**  
+**a *"void"* is a community.**  
 a void contains nestable *"bubble"* chat rooms..  
 role assignments, admins and moderators, you get it..  
 

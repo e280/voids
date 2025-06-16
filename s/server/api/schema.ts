@@ -1,53 +1,46 @@
 
 import {AsFns, Secure} from "@e280/renraku/node"
-import {Void, Drop, RoleAssignment} from "../parts/types.js"
+import {Void, Drop, Ciphertext, UserId, VoidId, RoleEntry, BubbleId} from "../parts/types.js"
 
-export type Auth = {
-	claimToken: string
-}
-
-export type AuthClaim = {}
+export type Auth = {claimToken: string}
 
 export type Serverside = AsFns<{
-	anon: {
-
-		/** see how many voids are active */
-		getVoidCount(): Promise<number>
+	stats: {
+		voidCount(): Promise<number>
 	}
 
-	user: Secure<Auth, {
-
-		/** create a new void */
-		createVoid(voidId: string, o: {pinned: string}): Promise<Void>
-
-		/** query a void */
-		readVoid(voidId: string): Promise<Void | undefined>
-
-		/** update a void */
-		updateVoid(voidId: string, o: {pinned?: string, roles?: RoleAssignment[]}): Promise<Void>
-
-		/** terminate a void */
-		deleteVoid(voidId: string): Promise<void>
-
-		/** post a drop (messages etc) */
-		postDrop(voidId: string, payload: string): Promise<Drop>
-
-		/** list all drops in a void */
-		listDrops(voidId: string): Promise<Drop[]>
-
-		/** delete a list of drops */
-		deleteDrops(voidId: string, dropIds: string[]): Promise<void>
-
-		/** delete all the drops in a void */
-		wipeVoidDrops(voidId: string): Promise<void>
-
-		/** declare what voids you subscribe to update for */
-		follow(voidIds: string[]): Promise<void>
+	keycard: Secure<Auth, {
+		save(ciphertext: Ciphertext): Promise<void>
+		load(): Promise<Ciphertext>
 	}>
+
+	vault: Secure<Auth, {
+		save(ciphertext: Ciphertext): Promise<void>
+		load(): Promise<Ciphertext>
+		deliverInvite(recipientId: UserId, invite: Ciphertext): Promise<void>
+	}>,
+
+	void: Secure<Auth, {
+		create(id: VoidId, o: {bulletin: Ciphertext}): Promise<Void>
+		read(id: VoidId): Promise<Void | undefined>
+		update(id: VoidId, o: {bulletin?: Ciphertext, roles?: RoleEntry[]}): Promise<Void>
+		delete(id: VoidId): Promise<void>
+		wipe(id: VoidId): Promise<void>
+	}>,
+
+	drops: Secure<Auth, {
+		list(voidId: VoidId, bubbleId: BubbleId): Promise<Drop[]>
+		post(voidId: VoidId, bubbleId: BubbleId, payload: Ciphertext): Promise<Drop>
+		delete(voidId: VoidId, bubbleId: BubbleId, dropIds: string[]): Promise<void>
+	}>,
+
+	sync: Secure<Auth, {
+		follow(voidIds: string[]): Promise<void>
+	}>,
 }>
 
 export type Clientside = {
-	pulseVoid(voidId: string, v: Void | null): Promise<void>
-	pulseDrop(voidId: string, drop: Drop): Promise<void>
+	pulseVoid(voidId: VoidId, v: Void | null): Promise<void>
+	pulseDrop(voidId: VoidId, bubbleId: BubbleId, drop: Drop): Promise<void>
 }
 

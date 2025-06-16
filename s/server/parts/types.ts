@@ -1,50 +1,50 @@
 
 import {Kv} from "@e280/kv"
+import {Privileges} from "./privileges.js"
 
 export type Database = {
 	voids: Kv<Void>
-	drops: (dropId: string) => Kv<Drop>
+	drops: (voidId: VoidId, bubbleId: BubbleId) => Kv<Drop>
 }
 
-/** an authlocal id that has been encrypted by the symkey (server doesn't have it) */
-export type EncryptedId = string
+export type Id = string
+export type UserId = Id
+export type VoidId = Id
+export type BubbleId = Id
+export type RoleId = Id
+export type DropId = Id
 
-/** arbitrary data that has been encrypted by the symkey (server doesn't have it) */
-export type EncryptedData = string
+/** arbitrary encrypted data */
+export type Ciphertext = string
 
-export type Peeker = [userId: EncryptedId, time: number]
-export type Role = "admin" | "mod" | "muted"
-export type RoleAssignment = [userId: EncryptedId, role: Role[]]
+/** a membership key, 64 random hex characters */
+export type Member = string
+
+export type RoleEntry = [roleId: RoleId, role: Role]
+export type Role = {
+	label: Ciphertext
+	privileges: Privileges
+	members: Member[]
+}
+
+/** a community */
+export type Void = {
+	bulletin: Ciphertext
+	roles: RoleEntry[]
+	bubbles: Bubble[]
+	latestActivityTime: number
+}
 
 /** a chat room */
-export type Void = {
-
-	/** hash of the symmetric key */
-	id: string
-
-	/** encrypted pinned data payload (includes the void label) */
-	pinned: EncryptedData
-
-	/** role assigments for user ids */
-	roles: RoleAssignment[]
-
-	/** user ids who have read the void */
-	peekers: Peeker[]
-
-	/** when was the latest activity */
-	latestActivityTime: number
+export type Bubble = {
+	header: Ciphertext
+	roles: RoleEntry[]
+	children: BubbleId[]
 }
 
 /** an event in a chatroom, like a message or something */
 export type Drop = {
-
-	/** server-assigned unique id for this drop */
-	id: string
-
-	/** server-assigned timestamp when drop was posted */
 	time: number
-
-	/** encrypted data (includes the void label) */
-	payload: EncryptedData
+	payload: Ciphertext
 }
 

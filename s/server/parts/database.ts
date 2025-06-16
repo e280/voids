@@ -5,7 +5,7 @@ import {Void, Database, Drop} from "./types.js"
 export function makeDatabase(kv: Kv): Database {
 	return {
 		voids: kv.namespace<Void>("void"),
-		drops: voidId => kv.namespace("drop").namespace<Drop>(voidId),
+		drops: (voidId, bubbleId) => kv.namespace<Drop>(`drop:${voidId}:${bubbleId}`),
 	}
 }
 

@@ -1,11 +1,11 @@
 
 import {MapG} from "@e280/stz"
-import {Role, RoleAssignment} from "./types.js"
+import {Role, RoleEntry} from "./types.js"
 
 export class RoleKeeper {
 	#map = new MapG<string, Set<Role>>()
 
-	constructor(assignments: RoleAssignment[] = []) {
+	constructor(assignments: RoleEntry[] = []) {
 		for (const [userId, roleArray] of assignments) {
 			const roleSet = new Set<Role>(roleArray)
 			this.#map.set(userId, roleSet)
@@ -16,7 +16,7 @@ export class RoleKeeper {
 		return this.#map.guarantee(userId, () => new Set())
 	}
 
-	toAssignments(): RoleAssignment[] {
+	toAssignments(): RoleEntry[] {
 		return [...this.#map]
 			.filter(([,set]) => set.size > 0)
 			.map(([userId, set]) => [userId, [...set]])

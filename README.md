@@ -24,8 +24,8 @@ role assignments are bubble-scoped and heritable..
 
 **into the unknown.**  
 creating a void, your browser mints a secret key that isn't shared with the server..  
-you send the secret to others via links or encrypted invites.  
-your keys, memberships, and invites are encrypted in your account's vault, unreadable to the server.  
+you send the secret to others via links or encrypted invites..  
+your keys, memberships, and invites, are all encrypted in your account's vault, unreadable to the server..  
 
 **the blind coordinator.**  
 our database is mostly useless.. garbled messages.. unreadable vaults.. just noise..  

@@ -2,13 +2,11 @@
 ![](https://i.imgur.com/m7T5hZ7.jpeg)
 
 # 🌌 voids
+> 👉 https://voids.e280.org/ 👈  
 
-> better encrypted group chats..  
-> &nbsp; 👉 https://voids.e280.org/ 👈  
-
-**a *"void"* is an end-to-end encrypted community.**  
+**better encrypted group chats.**  
 high-grade cryption for your kinky sexting, forbidden memes.. or maybe just your basket-weaving club..  
-users hold the key.. the server cannot see..  
+users hold the keys.. the server cannot see..  
 
 **nothing to identify you.**  
 no phone numbers, no emails, no passwords..  
@@ -18,17 +16,17 @@ your authlocal id will remain as anonymous as you can keep it..
 **nothing lasts forever.**  
 messages vanish in 8 days.. idle voids dissolve in 32 days..  
 
-**grow your community.**  
+**a *"void"* is a little community.**  
 a void contains nestable *"bubble"* chat rooms..  
-role assignments are bubble-scoped and heritable..  
+role assignments, admins and moderators, you get it..  
 
-**into the unknown.**  
+**a ghost in the shell.**  
 creating a void, your browser mints a secret key that isn't shared with the server..  
 you send the secret to others via links or encrypted invites..  
 your keys, memberships, and invites, are all encrypted in your account's vault, unreadable to the server..  
 
 **the blind coordinator.**  
-our database is mostly useless.. garbled messages.. unreadable vaults.. just noise..  
+our database is useless.. garbled messages.. unreadable vaults.. just noise..  
 the server shuffles ciphertext around.. only users can decrypt it.. ignorance is bliss..  
 
 **cypherpunk vibes, buildercore energy..**  

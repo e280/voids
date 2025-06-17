@@ -1,11 +1,13 @@
 
 import {Kv} from "@e280/kv"
-import {Void, Database, Drop} from "./types.js"
+import {Database} from "../types/types.js"
 
 export function makeDatabase(kv: Kv): Database {
 	return {
-		voids: kv.namespace<Void>("void"),
-		drops: (voidId, bubbleId) => kv.namespace<Drop>(`drop:${voidId}:${bubbleId}`),
+		vaults: kv.namespace("vault"),
+		voids: kv.namespace("void"),
+		voidDrops: voidId => kv.namespace(`drop:${voidId}`),
+		drops: (voidId, bubbleId) => kv.namespace(`drop:${voidId}:${bubbleId}`),
 	}
 }
 

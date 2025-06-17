@@ -2,6 +2,7 @@
 import {Time} from "@e280/authlocal/core"
 
 export const constants = {
+	maxInvites: 10,
 	peekerLimit: 32,
 	maxDropsPerVoid: 1024,
 	dropLifespan: Time.days(8),

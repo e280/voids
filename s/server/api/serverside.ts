@@ -1,125 +1,131 @@
 
-import {verifyClaim} from "@e280/authlocal/core"
-import {Authorize, ExposedError, secure} from "@e280/renraku/node"
+import {Hex} from "@e280/stz"
+import {collect} from "@e280/kv"
+import {ExposedError} from "@e280/renraku/node"
 
-import {Void} from "../parts/types.js"
 import {Space} from "../parts/space.js"
 import {constants} from "../../constants.js"
-import {Follower} from "../parts/follower.js"
-import {Caps} from "../parts/capabilities.js"
-import {RoleKeeper} from "../parts/role-keeper.js"
-import {AuthClaim, Clientside, Serverside} from "./schema.js"
+import {secureUser} from "./utils/secure-user.js"
+import {Clientside, Serverside} from "./schema.js"
+import {secureMember} from "./utils/secure-member.js"
+import {resolvePrivileges} from "../parts/resolve-privileges.js"
+import {DropRecord, Noid, Vault, VoidRecord} from "../types/types.js"
 
 export const setupServerside = (
 		space: Space,
-		follower: Follower,
 		_clientside: Clientside,
 	): Serverside => ({
 
-	anon: {
-		async getVoidCount() {
+	stats: {
+		async voidCount() {
 			return space.voidCount
 		},
 	},
 
-	user: secure(async auth => {
-		const {proof} = await verifyClaim<AuthClaim>({
-			claimToken: auth.claimToken,
-			appOrigins: [constants.appOrigin],
-			allowedAudiences: [constants.serverOrigin],
-		})
+	vault: secureUser(({user}) => ({
+		async save(vault: Noid<Vault>) {
+			await space.database.vaults.set(user.id, vault)
+		},
+		async load() {
+			const vault = await space.database.vaults.get(user.id)
+			return vault
+				? {...vault, id: user.id}
+				: null
+		},
+		async deliverInvite(recipientId, invite) {
+			const vault = await space.database.vaults.get(recipientId)
+			if (!vault) return false
+			vault.invites = [...vault.invites, invite].slice(-constants.maxInvites)
+			await space.database.vaults.set(recipientId, vault)
+			return true
+		},
+	})),
 
-		const userId = proof.nametag.id
+	void: secureUser(({user}) => ({
+		async create(v) {
+			if (await space.database.voids.has(v.id))
+				throw new ExposedError("this void already exists")
+			return await space.database.voids.set(v.id, {
+				bulletin: v.bulletin,
+				members: v.members,
+				roles: v.roles,
+				bubbles: v.bubbles,
+				latestActivityTime: Date.now(),
+			})
+		},
+	})),
 
-		function voidCapabilities(v: Void) {
-			const roles = new RoleKeeper(v.roles).get(userId)
-			return space.capabilities.get(roles)
-		}
+	voidMember: secureMember(space, ({user, member, void: v}) => ({
+		async read() {
+			return v
+		},
+		async update(partial) {
+			const privileges = resolvePrivileges(v, member)
+			if (!privileges.canUpdateVoid) throw new ExposedError("not allowed")
 
-		async function getVoidAndCaps(voidId: string): Promise<[Void, Caps]> {
-			const v = await space.requireVoid(voidId)
-			return [v, voidCapabilities(v)]
-		}
+			const v2 = {...v, ...partial}
+			const updated: VoidRecord = {
+				roles: v2.roles,
+				bubbles: v2.bubbles,
+				members: v2.members,
+				bulletin: v2.bulletin,
+				latestActivityTime: Date.now(),
+			}
+			await space.database.voids.set(v.id, updated)
+			return {...updated, id: v.id}
+		},
 
-		return {
-			async createVoid(voidId, options) {
-				const already = await space.getVoid(voidId)
-				if (already) throw new Error("this void already exists")
+		async delete() {
+			const privileges = resolvePrivileges(v, member)
+			if (!privileges.canDeleteVoid) throw new ExposedError("not allowed")
 
-				const roles = new RoleKeeper()
-				roles.get(userId).add("admin")
+			// delete all drops in void
+			await space.database.voidDrops(v.id).del(
+				...await collect(space.database.voidDrops(v.id).keys())
+			)
 
-				const now = Date.now()
+			await space.database.voids.del(v.id)
+		},
 
-				return space.setVoid({
-					id: voidId,
-					pinned: options.pinned,
-					roles: roles.toAssignments(),
-					latestActivityTime: now,
-					peekers: [[userId, now]],
-				})
-			},
+		async wipe() {
+			const privileges = resolvePrivileges(v, member)
+			if (!privileges.canWipeVoid) throw new ExposedError("not allowed")
 
-			async readVoid(voidId) {
-				const v = await space.getVoid(voidId)
-				if (v) await space.peekIntoVoid(voidId, userId)
-				return v
-			},
+			// delete all drops in void
+			await space.database.voidDrops(v.id).del(
+				...await collect(space.database.voidDrops(v.id).keys())
+			)
+		},
+	})),
 
-			async updateVoid(voidId, options) {
-				const v = await space.requireVoid(voidId)
-				const caps = voidCapabilities(v)
+	drops: secureMember(space, ({member, void: v}) => ({
+		async list(bubbleId) {
+			const privileges = resolvePrivileges(v, member, bubbleId)
+			if (!privileges.canReadDrops) throw new ExposedError("not allowed")
+			const drops = await collect(space.database.drops(v.id, bubbleId).entries())
+			return drops.map(([id, drop]) => ({...drop, id}))
+		},
+		async post(bubbleId, payload) {
+			const privileges = resolvePrivileges(v, member, bubbleId)
+			if (!privileges.canPostDrops)
+				throw new ExposedError("not allowed")
+			const id = Hex.random()
+			const drop: DropRecord = {payload, time: Date.now()}
+			await space.database.drops(v.id, bubbleId).set(id, drop)
+			return {...drop, id}
+		},
+		async delete(bubbleId, dropIds) {
+			const privileges = resolvePrivileges(v, member, bubbleId)
+			if (!privileges.canDeleteDrops)
+				throw new ExposedError("not allowed")
+			await space.database.drops(v.id, bubbleId).del(...dropIds)
+		},
+	})),
 
-				if (options.pinned) {
-					if (!caps.canWritePinned) throw new ExposedError("unauthorized action")
-					v.pinned = options.pinned
-				}
-
-				if (options.roles) {
-					if (!caps.canAssignRoles) throw new ExposedError("unauthorized action")
-					v.roles = options.roles
-				}
-
-				return space.setVoid(v)
-			},
-
-			async deleteVoid(voidId) {
-				const [,caps] = await getVoidAndCaps(voidId)
-				if (!caps.canDeleteVoid) throw new ExposedError("unauthorized action")
-				await space.deleteVoids(voidId)
-			},
-
-			async postDrop(voidId, payload) {
-				const [v, caps] = await getVoidAndCaps(voidId)
-				if (!caps.canPostDrops) throw new ExposedError("unauthorized action")
-				if (caps.isMuted) throw new ExposedError("you've been muted in this void")
-				return space.postDrop(v, payload)
-			},
-
-			async listDrops(voidId) {
-				await space.peekIntoVoid(voidId, userId)
-				return space.listDropsInVoid(voidId)
-			},
-
-			async deleteDrops(voidId: string, dropIds: string[]) {
-				const [,caps] = await getVoidAndCaps(voidId)
-				if (!caps.canDeleteDrops) throw new ExposedError("unauthorized action")
-				await space.deleteDrops(voidId, dropIds)
-			},
-
-			async wipeVoidDrops(voidId: string) {
-				const [,caps] = await getVoidAndCaps(voidId)
-				if (!caps.canDeleteDrops) throw new ExposedError("unauthorized action")
-				await space.wipeVoidDrops(voidId)
-			},
-
-			async follow(voidIds) {
-				await Promise.all(
-					voidIds.map(async voidId => space.peekIntoVoid(voidId, userId))
-				)
-				follower.follow(voidIds)
-			},
-		} satisfies Authorize<Serverside["user"]>
-	})
+	sync: secureUser(({user}) => ({
+		async follow(voidIds) {
+			// TODO listen to these voids, unlisten to all others
+		},
+	})),
 })
 

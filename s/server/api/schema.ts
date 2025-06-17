@@ -1,42 +1,38 @@
 
 import {AsFns, Secure} from "@e280/renraku/node"
-import {Void, Drop, Ciphertext, UserId, VoidId, RoleEntry, BubbleId} from "../parts/types.js"
-
-export type Auth = {claimToken: string}
+import {Void, Drop, Ciphertext, UserId, VoidId, BubbleId, Vault, Noid, ClaimToken} from "../types/types.js"
 
 export type Serverside = AsFns<{
 	stats: {
 		voidCount(): Promise<number>
 	}
 
-	keycard: Secure<Auth, {
-		save(ciphertext: Ciphertext): Promise<void>
-		load(): Promise<Ciphertext>
+	vault: Secure<ClaimToken, {
+		save(vault: Noid<Vault>): Promise<void>
+		load(): Promise<Vault | null>
+		deliverInvite(recipientId: UserId, invite: Ciphertext): Promise<boolean>
 	}>
 
-	vault: Secure<Auth, {
-		save(ciphertext: Ciphertext): Promise<void>
-		load(): Promise<Ciphertext>
-		deliverInvite(recipientId: UserId, invite: Ciphertext): Promise<void>
-	}>,
+	void: Secure<ClaimToken, {
+		create(o: Void): Promise<void>
+	}>
 
-	void: Secure<Auth, {
-		create(id: VoidId, o: {bulletin: Ciphertext}): Promise<Void>
-		read(id: VoidId): Promise<Void | undefined>
-		update(id: VoidId, o: {bulletin?: Ciphertext, roles?: RoleEntry[]}): Promise<Void>
-		delete(id: VoidId): Promise<void>
-		wipe(id: VoidId): Promise<void>
-	}>,
+	voidMember: Secure<ClaimToken, {
+		read(): Promise<Void>
+		update(partial: Partial<Noid<Void>>): Promise<Void>
+		delete(): Promise<void>
+		wipe(): Promise<void>
+	}>
 
-	drops: Secure<Auth, {
-		list(voidId: VoidId, bubbleId: BubbleId): Promise<Drop[]>
-		post(voidId: VoidId, bubbleId: BubbleId, payload: Ciphertext): Promise<Drop>
-		delete(voidId: VoidId, bubbleId: BubbleId, dropIds: string[]): Promise<void>
-	}>,
+	drops: Secure<ClaimToken, {
+		list(bubbleId: BubbleId): Promise<Drop[]>
+		post(bubbleId: BubbleId, payload: Ciphertext): Promise<Drop>
+		delete(bubbleId: BubbleId, dropIds: string[]): Promise<void>
+	}>
 
-	sync: Secure<Auth, {
+	sync: Secure<ClaimToken, {
 		follow(voidIds: string[]): Promise<void>
-	}>,
+	}>
 }>
 
 export type Clientside = {

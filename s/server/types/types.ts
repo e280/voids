@@ -15,7 +15,9 @@ export type Noid<T extends object> = Omit<T, "id">
 /** arbitrary encrypted data */
 export type Ciphertext = string
 
-export type ClaimToken = string
+export type UserClaimToken = string
+export type VoidMemberClaimToken = string
+
 export type UserClaim = {}
 export type UserAuth = {user: Nametag}
 export type MemberClaim = {voidId: VoidId, member: string}

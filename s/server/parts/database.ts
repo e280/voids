@@ -8,6 +8,7 @@ export function makeDatabase(kv: Kv): Database {
 		voids: kv.namespace("void"),
 		voidDrops: voidId => kv.namespace(`drop:${voidId}`),
 		drops: (voidId, bubbleId) => kv.namespace(`drop:${voidId}:${bubbleId}`),
+		tickets: voidId => kv.namespace(`tickets:${voidId}`),
 	}
 }
 

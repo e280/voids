@@ -9,7 +9,7 @@ import {secureUser} from "./utils/secure-user.js"
 import {Clientside, Serverside} from "./schema.js"
 import {secureMember} from "./utils/secure-member.js"
 import {resolvePrivileges} from "../parts/resolve-privileges.js"
-import {DropRecord, Noid, Vault, VoidRecord} from "../types/types.js"
+import {DropRecord, Noid, TicketRecord, Vault, VoidRecord} from "../types/types.js"
 
 export const setupServerside = (
 		space: Space,
@@ -53,9 +53,66 @@ export const setupServerside = (
 				latestActivityTime: Date.now(),
 			})
 		},
+		async join(voidId, ticketId) {
+			const v = await space.database.voids.require(voidId)
+			const ticket = await space.database.tickets(voidId).require(ticketId)
+
+			ticket.uses++
+			ticket.timeLastUsed = Date.now()
+			if (ticket.remaining !== null)
+				ticket.remaining--
+
+			const member = Hex.random()
+			v.members.push(member)
+
+			if (v.members.length > constants.maxVoidMembers)
+				throw new ExposedError("exceeded max void members")
+
+			const ticketIsExpired = (
+				ticket.remaining !== null &&
+				ticket.remaining <= 0
+			)
+
+			const newTicket = ticketIsExpired
+				? undefined
+				: ticket
+
+			await space.database.voids.set(voidId, v)
+			await space.database.tickets(voidId).set(ticketId, newTicket)
+			return member
+		},
 	})),
 
-	voidMember: secureMember(space, ({user, member, void: v}) => ({
+	tickets: secureMember(space, ({user, member, void: v}) => ({
+		async list() {
+			const records = await collect(space.database.tickets(v.id).entries())
+			return records.map(([id, t]) => ({...t, id}))
+		},
+		async create(ticket) {
+			const id = Hex.random()
+			const now = Date.now()
+			const record: TicketRecord = {
+				...ticket,
+				timeCreated: now,
+				timeLastUsed: now,
+				remaining: ticket.remaining,
+			}
+			await space.database.tickets(v.id).set(id, record)
+			return {...record, id}
+		},
+		async update(ticket) {
+			const already = await space.database.tickets(v.id).require(ticket.id)
+			await space.database.tickets(v.id).set(ticket.id, {
+				...already,
+				remaining: ticket.remaining,
+			})
+		},
+		async delete(...ids) {
+			await space.database.tickets(v.id).del(...ids)
+		},
+	})),
+
+	knownVoid: secureMember(space, ({user, member, void: v}) => ({
 		async read() {
 			return v
 		},

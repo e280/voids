@@ -1,6 +1,6 @@
 
 import {AsFns, Secure} from "@e280/renraku/node"
-import {Void, Drop, Ciphertext, UserId, VoidId, BubbleId, Vault, Noid, ClaimToken} from "../types/types.js"
+import {Void, Drop, Ciphertext, UserId, VoidId, BubbleId, Vault, Noid, ClaimToken, TicketId, Ticket, TicketUpdate, Member} from "../types/types.js"
 
 export type Serverside = AsFns<{
 	stats: {
@@ -15,13 +15,21 @@ export type Serverside = AsFns<{
 
 	void: Secure<ClaimToken, {
 		create(o: Void): Promise<void>
+		join(voidId: VoidId, ticketId: TicketId): Promise<Member>
 	}>
 
-	voidMember: Secure<ClaimToken, {
+	knownVoid: Secure<ClaimToken, {
 		read(): Promise<Void>
 		update(partial: Partial<Noid<Void>>): Promise<Void>
 		delete(): Promise<void>
 		wipe(): Promise<void>
+	}>
+
+	tickets: Secure<ClaimToken, {
+		list(): Promise<Ticket[]>
+		create(ticket: Noid<Ticket>): Promise<Ticket>
+		update(ticket: TicketUpdate): Promise<void>
+		delete(...ids: TicketId[]): Promise<void>
 	}>
 
 	drops: Secure<ClaimToken, {

@@ -8,6 +8,7 @@ export type VoidId = Id
 export type BubbleId = Id
 export type RoleId = Id
 export type DropId = Id
+export type TicketId = Id
 
 export type Noid<T extends object> = Omit<T, "id">
 
@@ -25,6 +26,7 @@ export type Database = {
 	voids: Kv<VoidRecord>
 	voidDrops: (voidId: VoidId) => Kv<DropRecord>
 	drops: (voidId: VoidId, bubbleId: BubbleId) => Kv<DropRecord>
+	tickets: (voidId: VoidId) => Kv<TicketRecord>
 }
 
 /** user's account data */
@@ -66,6 +68,19 @@ export type Drop = {
 	id: DropId
 	time: number
 	payload: Ciphertext
+}
+
+export type Ticket = TicketUpdate & TicketServerside
+
+export type TicketUpdate = {
+	id: TicketId
+	remaining: number | null
+}
+
+export type TicketServerside = {
+	uses: number
+	timeCreated: number
+	timeLastUsed: number
 }
 
 /** a membership key, 64 random hex characters */
@@ -110,4 +125,6 @@ export type VaultRecord = Noid<Vault>
 export type VoidRecord = {latestActivityTime: number} & Noid<Void>
 export type BubbleRecord = Noid<Bubble>
 export type DropRecord = Noid<Drop>
+
+export type TicketRecord = Noid<Ticket>
 

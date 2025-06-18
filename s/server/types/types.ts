@@ -16,16 +16,22 @@ export type SeatId = Id
 
 export type Noid<T extends object> = Omit<T, "id">
 
-/** arbitrary encrypted data */
+/** base64url encrypted data, opaque to the server, only the clients know what's inside */
 export type Ciphertext = string
 
-
 export type UserClaimToken = string
+export type SeatClaimToken = string
+
+/** intentionally empty, user login claims don't need any custom data */
 export type UserClaim = {}
+
+/** user login with a claim to a specific seat in a specific void */
+export type SeatClaim = {voidId: VoidId, seatKey: string}
+
+/** verified user that is logged in */
 export type UserAuth = {user: Nametag}
 
-export type SeatClaimToken = string
-export type SeatClaim = {voidId: VoidId, seatKey: string}
+/** verified user that is logged in, and has a seat at the specified void */
 export type SeatAuth = {seatKey: string, seatId: string, void: Void} & UserAuth
 
 export type Database = {
@@ -56,7 +62,7 @@ export type Vault = {
 export type Void = {
 	id: VoidId
 	bulletin: Ciphertext
-	seats: SeatId[]
+	seats: Seat[]
 	roles: Role[]
 	bubbles: Bubble[]
 	hierarchy: Hierarchy
@@ -68,6 +74,12 @@ export type Bubble = {
 	id: BubbleId
 	header: Ciphertext
 	seats: SeatId[]
+}
+
+/** a participant in a void */
+export type Seat = {
+	id: SeatId
+	joinedTime: number
 }
 
 /** hierarchy describes the structure of how roles flow and ux for how bubbles are organized */
@@ -92,7 +104,7 @@ export type Drop = {
 	seatId: SeatId
 	payload: Ciphertext
 
-	/** self-delete sooner than the global setting */
+	/** if provided, this drop can expire sooner than the global setting */
 	lifespan: number | null
 }
 

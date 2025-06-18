@@ -1,6 +1,6 @@
 
 import {AsFns, Secure} from "@e280/renraku/node"
-import {Void, Drop, Ciphertext, UserId, VoidId, BubbleId, Vault, Noid, UserClaimToken, VoidMemberClaimToken, TicketId, Ticket, TicketUpdate, Member} from "../types/types.js"
+import {Void, Drop, Ciphertext, UserId, VoidId, BubbleId, Vault, Noid, UserClaimToken, SeatClaimToken, TicketId, Ticket, TicketUpdate, SeatKey, DropId} from "../types/types.js"
 
 export type Serverside = AsFns<{
 	stats: {
@@ -17,19 +17,21 @@ export type Serverside = AsFns<{
 	/** a void is a community hub, which can contain chatrooms */
 	void: Secure<UserClaimToken, {
 		create(o: Void): Promise<void>
-		join(voidId: VoidId, ticketId: TicketId): Promise<Member>
+		join(voidId: VoidId, ticketId: TicketId): Promise<SeatKey>
 	}>
 
 	/** fns for void members */
-	knownVoid: Secure<VoidMemberClaimToken, {
+	knownVoid: Secure<SeatClaimToken, {
 		read(): Promise<Void>
 		update(partial: Partial<Noid<Void>>): Promise<Void>
 		delete(): Promise<void>
-		wipe(): Promise<void>
+		wipeAllDrops(): Promise<void>
+		wipeMyDrops(): Promise<void>
+		destroyMySeat(): Promise<void>
 	}>
 
 	/** a ticket is redeemable for void membership */
-	tickets: Secure<VoidMemberClaimToken, {
+	tickets: Secure<SeatClaimToken, {
 		list(): Promise<Ticket[]>
 		create(ticket: Noid<Ticket>): Promise<Ticket>
 		update(ticket: TicketUpdate): Promise<void>
@@ -37,7 +39,7 @@ export type Serverside = AsFns<{
 	}>
 
 	/** a drop is a post, like a message, in a bubble chatroom */
-	drops: Secure<VoidMemberClaimToken, {
+	drops: Secure<SeatClaimToken, {
 		list(bubbleId: BubbleId): Promise<Drop[]>
 		post(bubbleId: BubbleId, payload: Ciphertext): Promise<Drop>
 		delete(bubbleId: BubbleId, dropIds: string[]): Promise<void>
@@ -55,6 +57,6 @@ export type Clientside = {
 	pulseVoid(voidId: VoidId, v: Void | null): Promise<void>
 
 	/** the server can push a realtime update about a drop */
-	pulseDrop(voidId: VoidId, bubbleId: BubbleId, drop: Drop): Promise<void>
+	pulseDrop(voidId: VoidId, bubbleId: BubbleId, dropId: DropId, drop: Drop | null): Promise<void>
 }
 

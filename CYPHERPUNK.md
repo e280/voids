@@ -5,6 +5,18 @@
 > [!IMPORTANT]
 > ***WIP*** — this is super incomplete rn
 
+### cool ideas
+
+**the *"i was not here"* button.**  
+it wipes all your messages and revokes your membership from a void..  
+your presence and history is scrubbed from that void, leaving no trace..  
+
+**three kinds of drops**  
+anon drops are messages with no authlocal attribution, just your seat id..  
+unsigned drops show authlocal id, but could be forged (unlocked icon)..  
+signed drops show authlocal id, and cannot be forged (locked icon)..  
+
+
 ### vault
 
 **you, the user, login via authlocal.**

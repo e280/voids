@@ -10,15 +10,14 @@ users hold the keys.. the server cannot see..
 
 **nothing to identify you.**  
 no phone numbers, no emails, no passwords..  
-user-sovereign cryptographic logins via e280's [authlocal](https://github.com/e280/authlocal)..  
-your authlocal id will remain as anonymous as you can keep it..  
+pseudonymous user-sovereign cryptographic logins via e280's [authlocal](https://github.com/e280/authlocal)..  
 
 **nothing lasts forever.**  
 messages vanish in 8 days.. idle voids dissolve in 32 days..  
 
 **a *"void"* is a community.**  
-a void contains nestable *"bubble"* chat rooms..  
-role assignments, admins and moderators, you get it..  
+it can be public or private, and contains "bubbles" (chatrooms)..  
+role assignments, admins, moderators, you get it..  
 
 **a ghost in the shell.**  
 creating a void, your browser mints a secret key that isn't shared with the server..  

@@ -7,7 +7,7 @@ import {Space} from "../parts/space.js"
 import {constants} from "../../constants.js"
 import {secureUser} from "./utils/secure-user.js"
 import {Clientside, Serverside} from "./surface.js"
-import {secureMember} from "./utils/secure-member.js"
+import {secureSeat} from "./utils/secure-member.js"
 import {resolvePrivileges} from "../parts/resolve-privileges.js"
 import {DropRecord, Noid, TicketRecord, Vault, VoidRecord} from "../types/types.js"
 
@@ -47,10 +47,13 @@ export const setupServerside = (
 				throw new ExposedError("this void already exists")
 			return await space.database.voids.set(v.id, {
 				bulletin: v.bulletin,
-				members: v.members,
+				seats: v.seats,
 				roles: v.roles,
 				bubbles: v.bubbles,
 				latestActivityTime: Date.now(),
+
+				// TODO
+				hierarchy: []
 			})
 		},
 		async join(voidId, ticketId) {
@@ -63,9 +66,9 @@ export const setupServerside = (
 				ticket.remaining--
 
 			const member = Hex.random()
-			v.members.push(member)
+			v.seats.push(member)
 
-			if (v.members.length > constants.maxVoidMembers)
+			if (v.seats.length > constants.maxVoidMembers)
 				throw new ExposedError("exceeded max void members")
 
 			const ticketIsExpired = (
@@ -83,7 +86,7 @@ export const setupServerside = (
 		},
 	})),
 
-	tickets: secureMember(space, ({user, member, void: v}) => ({
+	tickets: secureSeat(space, ({void: v}) => ({
 		async list() {
 			const records = await collect(space.database.tickets(v.id).entries())
 			return records.map(([id, t]) => ({...t, id}))
@@ -112,28 +115,31 @@ export const setupServerside = (
 		},
 	})),
 
-	knownVoid: secureMember(space, ({user, member, void: v}) => ({
+	knownVoid: secureSeat(space, ({user, seatKey, void: v}) => ({
 		async read() {
 			return v
 		},
 		async update(partial) {
-			const privileges = resolvePrivileges(v, member)
+			const privileges = resolvePrivileges(v, seatKey)
 			if (!privileges.canUpdateVoid) throw new ExposedError("not allowed")
 
 			const v2 = {...v, ...partial}
 			const updated: VoidRecord = {
 				roles: v2.roles,
 				bubbles: v2.bubbles,
-				members: v2.members,
+				seats: v2.seats,
 				bulletin: v2.bulletin,
 				latestActivityTime: Date.now(),
+
+				// TODO
+				hierarchy: [],
 			}
 			await space.database.voids.set(v.id, updated)
 			return {...updated, id: v.id}
 		},
 
 		async delete() {
-			const privileges = resolvePrivileges(v, member)
+			const privileges = resolvePrivileges(v, seatKey)
 			if (!privileges.canDeleteVoid) throw new ExposedError("not allowed")
 
 			// delete all drops in void
@@ -144,8 +150,8 @@ export const setupServerside = (
 			await space.database.voids.del(v.id)
 		},
 
-		async wipe() {
-			const privileges = resolvePrivileges(v, member)
+		async wipeAllDrops() {
+			const privileges = resolvePrivileges(v, seatKey)
 			if (!privileges.canWipeVoid) throw new ExposedError("not allowed")
 
 			// delete all drops in void
@@ -153,26 +159,29 @@ export const setupServerside = (
 				...await collect(space.database.voidDrops(v.id).keys())
 			)
 		},
+
+		async wipeMyDrops() {},
+		async destroyMySeat() {},
 	})),
 
-	drops: secureMember(space, ({member, void: v}) => ({
+	drops: secureSeat(space, ({seatKey, seatId, void: v}) => ({
 		async list(bubbleId) {
-			const privileges = resolvePrivileges(v, member, bubbleId)
+			const privileges = resolvePrivileges(v, seatKey, bubbleId)
 			if (!privileges.canReadDrops) throw new ExposedError("not allowed")
 			const drops = await collect(space.database.drops(v.id, bubbleId).entries())
 			return drops.map(([id, drop]) => ({...drop, id}))
 		},
 		async post(bubbleId, payload) {
-			const privileges = resolvePrivileges(v, member, bubbleId)
+			const privileges = resolvePrivileges(v, seatKey, bubbleId)
 			if (!privileges.canPostDrops)
 				throw new ExposedError("not allowed")
 			const id = Hex.random()
-			const drop: DropRecord = {payload, time: Date.now()}
+			const drop: DropRecord = {payload, lifespan: null, seatId, time: Date.now()}
 			await space.database.drops(v.id, bubbleId).set(id, drop)
 			return {...drop, id}
 		},
 		async delete(bubbleId, dropIds) {
-			const privileges = resolvePrivileges(v, member, bubbleId)
+			const privileges = resolvePrivileges(v, seatKey, bubbleId)
 			if (!privileges.canDeleteDrops)
 				throw new ExposedError("not allowed")
 			await space.database.drops(v.id, bubbleId).del(...dropIds)

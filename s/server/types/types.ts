@@ -9,19 +9,24 @@ export type BubbleId = Id
 export type RoleId = Id
 export type DropId = Id
 export type TicketId = Id
+export type HierId = Id
+
+/** just a hash of the seat key */
+export type SeatId = Id
 
 export type Noid<T extends object> = Omit<T, "id">
 
 /** arbitrary encrypted data */
 export type Ciphertext = string
 
-export type UserClaimToken = string
-export type VoidMemberClaimToken = string
 
+export type UserClaimToken = string
 export type UserClaim = {}
 export type UserAuth = {user: Nametag}
-export type MemberClaim = {voidId: VoidId, member: string}
-export type MemberAuth = {member: string, void: Void} & UserAuth
+
+export type SeatClaimToken = string
+export type SeatClaim = {voidId: VoidId, seatKey: string}
+export type SeatAuth = {seatKey: string, seatId: string, void: Void} & UserAuth
 
 export type Database = {
 	vaults: Kv<VaultRecord>
@@ -44,32 +49,51 @@ export type Vault = {
 	invites: Ciphertext[]
 
 	/** user's membership data */
-	memberships: Ciphertext
+	seats: Ciphertext
 }
 
 /** a community */
 export type Void = {
 	id: VoidId
 	bulletin: Ciphertext
-	members: Member[]
-	roles: VoidRole[]
+	seats: SeatId[]
+	roles: Role[]
 	bubbles: Bubble[]
+	hierarchy: Hierarchy
+	bans?: Ciphertext
 }
 
 /** a chat room */
 export type Bubble = {
 	id: BubbleId
 	header: Ciphertext
-	members: Member[]
-	roles: BubbleRole[]
-	children: BubbleId[]
+	seats: SeatId[]
 }
+
+/** hierarchy describes the structure of how roles flow and ux for how bubbles are organized */
+export type Hierarchy = HierNode[]
+export type HierNode = HierBranch | HierBubble
+export type HierBasics = {
+	id: HierId
+	label: Ciphertext
+}
+export type HierBranch = {
+	assignments: RoleAssignment[]
+	children: HierId[]
+} & HierBasics
+export type HierBubble = {
+	bubbleId: BubbleId
+} & HierBasics
 
 /** an event in a chatroom, like a message or something */
 export type Drop = {
 	id: DropId
 	time: number
+	seatId: SeatId
 	payload: Ciphertext
+
+	/** self-delete sooner than the global setting */
+	lifespan: number | null
 }
 
 export type Ticket = TicketUpdate & TicketServerside
@@ -77,6 +101,7 @@ export type Ticket = TicketUpdate & TicketServerside
 export type TicketUpdate = {
 	id: TicketId
 	remaining: number | null
+	captcha?: boolean
 }
 
 export type TicketServerside = {
@@ -85,43 +110,37 @@ export type TicketServerside = {
 	timeLastUsed: number
 }
 
-/** a membership key, 64 random hex characters */
-export type Member = string
+/** private membership key, 64 random hex characters */
+export type SeatKey = string
 
-export type Priv = 1 | 0 | -1
+/** public hash of the seat key */
 
 export type VoidPrivs = {
-	canUpdateVoid: Priv
-	canDeleteVoid: Priv
-	canWipeVoid: Priv
-	canAdminRoles: Priv
-	canAssignRoles: Priv
-	canWriteBulletin: Priv
-} & BubblePrivs
+	canUpdateVoid: boolean
+	canDeleteVoid: boolean
+	canWipeVoid: boolean
+	canAdminRoles: boolean
+	canAssignRoles: boolean
+	canWriteBulletin: boolean
+}
 
 export type BubblePrivs = {
-	canSeeBubbles: Priv
-	canWriteHeader: Priv
-	canReadDrops: Priv
-	canPostDrops: Priv
-	canDeleteDrops: Priv
+	canSeeBubbles: boolean
+	canWriteHeader: boolean
+	canReadDrops: boolean
+	canPostDrops: boolean
+	canDeleteDrops: boolean
 }
 
-export type Privileges = {[K in keyof VoidPrivs]: boolean}
+export type Privileges = {[K in keyof (VoidPrivs & BubblePrivs)]: boolean}
 
-export type VoidRole = {
+export type Role = {
 	id: RoleId
 	label: Ciphertext
-	members: Member[]
-	privs: VoidPrivs
+	privs: Partial<VoidPrivs & BubblePrivs>
 }
 
-export type BubbleRole = {
-	id: RoleId
-	label: Ciphertext
-	members: Member[]
-	privs: BubblePrivs
-}
+export type RoleAssignment = [id: RoleId, SeatId[]]
 
 export type VaultRecord = Noid<Vault>
 export type VoidRecord = {latestActivityTime: number} & Noid<Void>

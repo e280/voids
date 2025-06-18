@@ -18,14 +18,14 @@ export const defaultPrivileges: Privileges = {
 }
 
 export function resolvePrivileges(v: Void, member: string, bubbleId?: string): Privileges {
-	if (!v.members.includes(member)) throw new Error("not even a member")
+	if (!v.seats.includes(member)) throw new Error("not even a member")
 
 	// starting with the default privileges
 	const privileges = deep.clone(defaultPrivileges)
 
 	// applying void-level privs
 	for (const role of v.roles) {
-		if (role.members.includes(member))
+		if (role.seats.includes(member))
 			applyPrivs(privileges, role.privs)
 	}
 
@@ -34,7 +34,7 @@ export function resolvePrivileges(v: Void, member: string, bubbleId?: string): P
 		const chain = bubbleChain(v, bubbleId)
 		for (const bubble of chain) {
 			for (const role of bubble.roles) {
-				if (role.members.includes(member))
+				if (role.seats.includes(member))
 					applyPrivs(privileges, role.privs)
 			}
 		}

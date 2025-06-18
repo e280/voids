@@ -11,11 +11,15 @@
 it wipes all your messages and revokes your membership from a void..  
 your presence and history is scrubbed from that void, leaving no trace..  
 
+**the *"nuclear wipe and nope-out"* button.**  
+completely and utterly destroys your voids account and all associated data..  
+deletes all messages, all void seats, your vault.. everything.. gone..  
+like it was all a dream..  
+
 **three kinds of drops**  
 anon drops are messages with no authlocal attribution, just your seat id..  
 unsigned drops show authlocal id, but could be forged (unlocked icon)..  
 signed drops show authlocal id, and cannot be forged (locked icon)..  
-
 
 ### vault
 
@@ -39,6 +43,4 @@ signed drops show authlocal id, and cannot be forged (locked icon)..
   - `vault.memberships` — list of membership keys that permit your access the voids you've joined
   - `vault.inbox` — place where pending invites and other messages can reach you
     - ℹ️ anybody can encrypt items for your inbox using your valet public encryption key, without the server knowing
-
-### voids and bubbles
 

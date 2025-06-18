@@ -4,6 +4,10 @@
 # 🌌 voids
 > 👉 https://voids.e280.org/ 👈  
 
+> [!IMPORTANT]  
+> **work in progress**  
+> the app is under development, it's not usable yet.  
+
 **better encrypted group chats.**  
 high-grade cryption for your kinky sexting, forbidden memes.. or maybe just your basket-weaving club..  
 users hold the keys.. the server cannot see..  

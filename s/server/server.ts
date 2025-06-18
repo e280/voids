@@ -4,7 +4,7 @@ import {LevelDriver} from "@e280/kv/level"
 import {endpoint, remote, WebSocketServer} from "@e280/renraku/node"
 
 import {makeRelay} from "./relay.js"
-import {Clientside} from "./api/schema.js"
+import {Clientside} from "./api/surface.js"
 
 const level = new LevelDriver("./db")
 const kv = new Kv(level)

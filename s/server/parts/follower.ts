@@ -2,7 +2,7 @@
 import {MapG} from "@e280/stz"
 
 import {Space} from "./space.js"
-import {Clientside} from "../api/schema.js"
+import {Clientside} from "../api/surface.js"
 
 export class Follower {
 	#watchers = new MapG<string, () => void>()

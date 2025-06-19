@@ -1,6 +1,7 @@
 
 import {sub} from "@e280/stz"
-import {Database, DropPulse, VoidPulse} from "../types/types.js"
+import {collect} from "@e280/kv"
+import {Database, DropPulse, SeatId, VoidId, VoidPulse} from "../types/types.js"
 
 export class Space {
 	voidCount = 0
@@ -14,6 +15,19 @@ export class Space {
 		for await (const _ of this.database.voids.keys())
 			count += 1
 		this.voidCount = count
+	}
+
+	async deleteAllDropsInVoid(voidId: VoidId) {
+		const keys = await collect(this.database.void(voidId).drops.keys())
+		await this.database.void(voidId).drops.del(...keys)
+	}
+
+	async wipeDropsBySeat(voidId: VoidId, seatId: SeatId) {
+		const drops = await collect(this.database.void(voidId).drops.entries())
+		const myDropKeys = drops
+			.filter(([,drop]) => drop.seatId === seatId)
+			.map(([key]) => key)
+		await this.database.void(voidId).drops.del(...myDropKeys)
 	}
 
 	// async setVoid(v: Void) {

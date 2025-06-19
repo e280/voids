@@ -4,6 +4,7 @@ import {Database} from "../types/types.js"
 
 export function makeDatabase(kv: Kv): Database {
 	return {
+		kv,
 		vaults: kv.scope(`vault`),
 		voids: kv.scope(`void`),
 		void: voidId => ({

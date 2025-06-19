@@ -40,6 +40,7 @@ export type UserAuth = {user: Nametag}
 export type SeatAuth = {seatKey: SeatKey, seatId: SeatId, void: Void} & UserAuth
 
 export type Database = {
+	kv: Kv,
 	vaults: Kv<VaultRecord>
 	voids: Kv<VoidRecord>
 	void: (voidId: VoidId) => {
@@ -123,7 +124,8 @@ export type Ticket = TicketUpdate & TicketServerside
 export type TicketUpdate = {
 	id: TicketId
 	remaining: number | null
-	captcha?: boolean
+	expiresAt: number | null
+	captcha: boolean
 }
 
 export type TicketServerside = {

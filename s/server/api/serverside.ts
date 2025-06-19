@@ -3,8 +3,11 @@ import {Hex} from "@e280/stz"
 import {collect} from "@e280/kv"
 import {ExposedError} from "@e280/renraku/node"
 
+import {noid} from "../tools/noid.js"
 import {Space} from "../parts/space.js"
+import {hashHex} from "../tools/hash-hex.js"
 import {constants} from "../../constants.js"
+import {Follower} from "../parts/follower.js"
 import {secureUser} from "./utils/secure-user.js"
 import {Clientside, Serverside} from "./surface.js"
 import {secureSeat} from "./utils/secure-member.js"
@@ -13,185 +16,202 @@ import {DropRecord, Noid, TicketRecord, Vault, VoidRecord} from "../types/types.
 
 export const setupServerside = (
 		space: Space,
+		follower: Follower,
 		_clientside: Clientside,
-	): Serverside => ({
+	): Serverside => {
 
-	stats: {
-		async voidCount() {
-			return space.voidCount
-		},
-	},
+	const {database} = space
 
-	vault: secureUser(({user}) => ({
-		async save(vault: Noid<Vault>) {
-			await space.database.vaults.set(user.id, vault)
-		},
-		async load() {
-			const vault = await space.database.vaults.get(user.id)
-			return vault
-				? {...vault, id: user.id}
-				: null
-		},
-		async deliverInvite(recipientId, invite) {
-			const vault = await space.database.vaults.get(recipientId)
-			if (!vault) return false
-			vault.invites = [...vault.invites, invite].slice(-constants.maxInvites)
-			await space.database.vaults.set(recipientId, vault)
-			return true
-		},
-	})),
-
-	void: secureUser(({user}) => ({
-		async create(v) {
-			if (await space.database.voids.has(v.id))
-				throw new ExposedError("this void already exists")
-			return await space.database.voids.set(v.id, {
-				bulletin: v.bulletin,
-				seats: v.seats,
-				roles: v.roles,
-				bubbles: v.bubbles,
-				latestActivityTime: Date.now(),
-
-				// TODO
-				hierarchy: []
-			})
-		},
-		async join(voidId, ticketId) {
-			const v = await space.database.voids.require(voidId)
-			const ticket = await space.database.tickets(voidId).require(ticketId)
-
-			ticket.uses++
-			ticket.timeLastUsed = Date.now()
-			if (ticket.remaining !== null)
-				ticket.remaining--
-
-			const member = Hex.random()
-			v.seats.push(member)
-
-			if (v.seats.length > constants.maxVoidMembers)
-				throw new ExposedError("exceeded max void members")
-
-			const ticketIsExpired = (
-				ticket.remaining !== null &&
-				ticket.remaining <= 0
-			)
-
-			const newTicket = ticketIsExpired
-				? undefined
-				: ticket
-
-			await space.database.voids.set(voidId, v)
-			await space.database.tickets(voidId).set(ticketId, newTicket)
-			return member
-		},
-	})),
-
-	tickets: secureSeat(space, ({void: v}) => ({
-		async list() {
-			const records = await collect(space.database.tickets(v.id).entries())
-			return records.map(([id, t]) => ({...t, id}))
-		},
-		async create(ticket) {
-			const id = Hex.random()
-			const now = Date.now()
-			const record: TicketRecord = {
-				...ticket,
-				timeCreated: now,
-				timeLastUsed: now,
-				remaining: ticket.remaining,
-			}
-			await space.database.tickets(v.id).set(id, record)
-			return {...record, id}
-		},
-		async update(ticket) {
-			const already = await space.database.tickets(v.id).require(ticket.id)
-			await space.database.tickets(v.id).set(ticket.id, {
-				...already,
-				remaining: ticket.remaining,
-			})
-		},
-		async delete(...ids) {
-			await space.database.tickets(v.id).del(...ids)
-		},
-	})),
-
-	knownVoid: secureSeat(space, ({user, seatKey, void: v}) => ({
-		async read() {
-			return v
-		},
-		async update(partial) {
-			const privileges = resolvePrivileges(v, seatKey)
-			if (!privileges.canUpdateVoid) throw new ExposedError("not allowed")
-
-			const v2 = {...v, ...partial}
-			const updated: VoidRecord = {
-				roles: v2.roles,
-				bubbles: v2.bubbles,
-				seats: v2.seats,
-				bulletin: v2.bulletin,
-				latestActivityTime: Date.now(),
-
-				// TODO
-				hierarchy: [],
-			}
-			await space.database.voids.set(v.id, updated)
-			return {...updated, id: v.id}
+	return {
+		stats: {
+			async voidCount() {
+				return space.voidCount
+			},
 		},
 
-		async delete() {
-			const privileges = resolvePrivileges(v, seatKey)
-			if (!privileges.canDeleteVoid) throw new ExposedError("not allowed")
+		vault: secureUser(({user}) => ({
+			async save(vault: Noid<Vault>) {
+				await database.vaults.set(user.id, vault)
+			},
+			async load() {
+				const vault = await database.vaults.get(user.id)
+				return vault
+					? {...vault, id: user.id}
+					: null
+			},
+			async deliverInvite(recipientId, invite) {
+				const vault = await database.vaults.get(recipientId)
+				if (!vault) return false
+				vault.invites = [...vault.invites, invite].slice(-constants.maxInvites)
+				await database.vaults.set(recipientId, vault)
+				return true
+			},
+		})),
 
-			// delete all drops in void
-			await space.database.voidDrops(v.id).del(
-				...await collect(space.database.voidDrops(v.id).keys())
-			)
+		void: secureUser(({user}) => ({
+			async create(v) {
+				if (await database.voids.has(v.id))
+					throw new ExposedError("this void already exists")
+				return await database.voids.set(v.id, {
+					bulletin: v.bulletin,
+					seats: v.seats,
+					roles: v.roles,
+					bubbles: v.bubbles,
+					hierarchy: v.hierarchy,
+					latestActivityTime: Date.now(),
+				})
+			},
+			async join(voidId, ticketId) {
+				const v = await database.voids.require(voidId)
+				const ticket = await database.void(voidId).tickets.require(ticketId)
 
-			await space.database.voids.del(v.id)
-		},
+				if (v.seats.length > constants.maxVoidMembers)
+					throw new ExposedError("exceeded max void members")
 
-		async wipeAllDrops() {
-			const privileges = resolvePrivileges(v, seatKey)
-			if (!privileges.canWipeVoid) throw new ExposedError("not allowed")
+				ticket.uses++
+				ticket.timeLastUsed = Date.now()
+				if (ticket.remaining !== null)
+					ticket.remaining--
 
-			// delete all drops in void
-			await space.database.voidDrops(v.id).del(
-				...await collect(space.database.voidDrops(v.id).keys())
-			)
-		},
+				const seatKey = Hex.random()
+				const seatId = await hashHex(seatKey)
+				v.seats.push({id: seatId, joinedTime: Date.now()})
 
-		async wipeMyDrops() {},
-		async destroyMySeat() {},
-	})),
+				const ticketIsExpired = (
+					(ticket.expiresAt !== null && ticket.expiresAt < Date.now()) ||
+					(ticket.remaining !== null && ticket.remaining <= 0)
+				)
 
-	drops: secureSeat(space, ({seatKey, seatId, void: v}) => ({
-		async list(bubbleId) {
-			const privileges = resolvePrivileges(v, seatKey, bubbleId)
-			if (!privileges.canReadDrops) throw new ExposedError("not allowed")
-			const drops = await collect(space.database.drops(v.id, bubbleId).entries())
-			return drops.map(([id, drop]) => ({...drop, id}))
-		},
-		async post(bubbleId, payload) {
-			const privileges = resolvePrivileges(v, seatKey, bubbleId)
-			if (!privileges.canPostDrops)
-				throw new ExposedError("not allowed")
-			const id = Hex.random()
-			const drop: DropRecord = {payload, lifespan: null, seatId, time: Date.now()}
-			await space.database.drops(v.id, bubbleId).set(id, drop)
-			return {...drop, id}
-		},
-		async delete(bubbleId, dropIds) {
-			const privileges = resolvePrivileges(v, seatKey, bubbleId)
-			if (!privileges.canDeleteDrops)
-				throw new ExposedError("not allowed")
-			await space.database.drops(v.id, bubbleId).del(...dropIds)
-		},
-	})),
+				const newTicket = ticketIsExpired
+					? undefined
+					: ticket
 
-	sync: secureUser(({user}) => ({
-		async follow(voidIds) {
-			// TODO listen to these voids, unlisten to all others
-		},
-	})),
-})
+				await database.kv.transaction(() => [
+					database.void(voidId).store.write.set(v),
+					database.void(voidId).tickets.write.set(ticketId, newTicket),
+				])
+
+				return seatKey
+			},
+		})),
+
+		tickets: secureSeat(space, ({void: v}) => ({
+			async list() {
+				const records = await collect(database.void(v.id).tickets.entries())
+				return records.map(([id, t]) => ({...t, id}))
+			},
+			async create(ticket) {
+				const id = Hex.random()
+				const now = Date.now()
+				const record: TicketRecord = {
+					...ticket,
+					timeCreated: now,
+					timeLastUsed: now,
+					remaining: ticket.remaining,
+				}
+				await database.void(v.id).tickets.set(id, record)
+				return {...record, id}
+			},
+			async update(ticket) {
+				const already = await database.void(v.id).tickets.require(ticket.id)
+				await database.void(v.id).tickets.set(ticket.id, {
+					...already,
+					remaining: ticket.remaining,
+				})
+			},
+			async delete(...ids) {
+				await database.void(v.id).tickets.del(...ids)
+			},
+		})),
+
+		knownVoid: secureSeat(space, ({user, seatKey, seatId, void: v}) => ({
+			async read() {
+				return v
+			},
+			async update(partial) {
+				const privileges = resolvePrivileges(v, seatKey)
+				if (!privileges.canUpdateVoid) throw new ExposedError("not allowed")
+
+				const v2 = {...v, ...partial}
+				const updated: VoidRecord = {
+					roles: v2.roles,
+					bubbles: v2.bubbles,
+					seats: v2.seats,
+					bulletin: v2.bulletin,
+					hierarchy: v2.hierarchy,
+					latestActivityTime: Date.now(),
+				}
+				await database.voids.set(v.id, updated)
+				return {...updated, id: v.id}
+			},
+
+			async delete() {
+				const privileges = resolvePrivileges(v, seatKey)
+				if (!privileges.canDeleteVoid) throw new ExposedError("not allowed")
+
+				await space.deleteAllDropsInVoid(v.id)
+				await database.voids.del(v.id)
+			},
+
+			async wipeAllDrops() {
+				const privileges = resolvePrivileges(v, seatKey)
+				if (!privileges.canWipeVoid) throw new ExposedError("not allowed")
+				await space.deleteAllDropsInVoid(v.id)
+			},
+
+			async wipeMyDrops() {
+				await space.wipeDropsBySeat(v.id, seatId)
+			},
+
+			async destroyMySeat() {
+				// filter out the seat
+				v.seats = v.seats.filter(seat => seat.id !== seatId)
+
+				// eliminate seat id from all hierarchy role assignments
+				for (const h of v.hierarchy) {
+					if ("assignments" in h) {
+						for (const entry of h.assignments)
+							entry[1] = entry[1].filter(id => id !== seatId)
+					}
+				}
+
+				// update the void
+				await database.voids.set(v.id, {
+					...noid(v),
+					latestActivityTime: Date.now(),
+				})
+			},
+		})),
+
+		drops: secureSeat(space, ({seatKey, seatId, void: v}) => ({
+			async list(bubbleId) {
+				const privileges = resolvePrivileges(v, seatKey, bubbleId)
+				if (!privileges.canReadDrops) throw new ExposedError("not allowed")
+				const drops = await collect(database.void(v.id).bubble(bubbleId).drops.entries())
+				return drops.map(([id, drop]) => ({...drop, id}))
+			},
+			async post(bubbleId, payload) {
+				const privileges = resolvePrivileges(v, seatKey, bubbleId)
+				if (!privileges.canPostDrops)
+					throw new ExposedError("not allowed")
+				const id = Hex.random()
+				const drop: DropRecord = {payload, lifespan: null, seatId, time: Date.now()}
+				await database.void(v.id).bubble(bubbleId).drops.set(id, drop)
+				return {...drop, id}
+			},
+			async delete(bubbleId, dropIds) {
+				const privileges = resolvePrivileges(v, seatKey, bubbleId)
+				if (!privileges.canDeleteDrops)
+					throw new ExposedError("not allowed")
+				await database.void(v.id).bubble(bubbleId).drops.del(...dropIds)
+			},
+		})),
+
+		sync: secureUser(() => ({
+			async follow(voidIds) {
+				follower.follow(voidIds)
+			},
+		})),
+	}
+}
 

@@ -4,11 +4,16 @@ import {Database} from "../types/types.js"
 
 export function makeDatabase(kv: Kv): Database {
 	return {
-		vaults: kv.namespace("vault"),
-		voids: kv.namespace("void"),
-		voidDrops: voidId => kv.namespace(`drop:${voidId}`),
-		drops: (voidId, bubbleId) => kv.namespace(`drop:${voidId}:${bubbleId}`),
-		tickets: voidId => kv.namespace(`tickets:${voidId}`),
+		vaults: kv.scope(`vault`),
+		voids: kv.scope(`void`),
+		void: voidId => ({
+			store: kv.scope(`void`).store(voidId),
+			tickets: kv.scope(`void.tickets:${voidId}`),
+			drops: kv.scope(`void.drops:${voidId}`),
+			bubble: bubbleId => ({
+				drops: kv.scope(`void.drops:${voidId}:${bubbleId}`)
+			}),
+		}),
 	}
 }
 

@@ -1,6 +1,6 @@
 
 import {AsFns, Secure} from "@e280/renraku/node"
-import {Void, Drop, Ciphertext, UserId, VoidId, BubbleId, Vault, Noid, UserClaimToken, SeatClaimToken, TicketId, Ticket, TicketUpdate, SeatKey, DropId} from "../types/types.js"
+import {Void, Drop, Ciphertext, UserId, VoidId, BubbleId, Vault, Noid, UserClaimToken, SeatClaimToken, TicketId, Ticket, TicketUpdate, SeatKey, VoidPulse, DropPulse} from "../types/types.js"
 
 export type Serverside = AsFns<{
 	stats: {
@@ -54,9 +54,9 @@ export type Serverside = AsFns<{
 export type Clientside = {
 
 	/** the server can push a realtime update about a void */
-	pulseVoid(voidId: VoidId, v: Void | null): Promise<void>
+	pulseVoid(p: VoidPulse): Promise<void>
 
 	/** the server can push a realtime update about a drop */
-	pulseDrop(voidId: VoidId, bubbleId: BubbleId, dropId: DropId, drop: Drop | null): Promise<void>
+	pulseDrop(p: DropPulse): Promise<void>
 }
 

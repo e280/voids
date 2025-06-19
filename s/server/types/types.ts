@@ -1,8 +1,10 @@
 
-import {Kv} from "@e280/kv"
+import {Kv, Store} from "@e280/kv"
 import {Nametag} from "@e280/authlocal/core"
 
+/** 64 character hex string */
 export type Id = string
+
 export type UserId = Id
 export type VoidId = Id
 export type BubbleId = Id
@@ -11,8 +13,11 @@ export type DropId = Id
 export type TicketId = Id
 export type HierId = Id
 
-/** just a hash of the seat key */
+/** public hash of the seat key */
 export type SeatId = Id
+
+/** private membership key, 64 random hex characters */
+export type SeatKey = string
 
 export type Noid<T extends object> = Omit<T, "id">
 
@@ -26,20 +31,25 @@ export type SeatClaimToken = string
 export type UserClaim = {}
 
 /** user login with a claim to a specific seat in a specific void */
-export type SeatClaim = {voidId: VoidId, seatKey: string}
+export type SeatClaim = {voidId: VoidId, seatKey: SeatKey}
 
 /** verified user that is logged in */
 export type UserAuth = {user: Nametag}
 
 /** verified user that is logged in, and has a seat at the specified void */
-export type SeatAuth = {seatKey: string, seatId: string, void: Void} & UserAuth
+export type SeatAuth = {seatKey: SeatKey, seatId: SeatId, void: Void} & UserAuth
 
 export type Database = {
 	vaults: Kv<VaultRecord>
 	voids: Kv<VoidRecord>
-	voidDrops: (voidId: VoidId) => Kv<DropRecord>
-	drops: (voidId: VoidId, bubbleId: BubbleId) => Kv<DropRecord>
-	tickets: (voidId: VoidId) => Kv<TicketRecord>
+	void: (voidId: VoidId) => {
+		store: Store<VoidRecord>
+		tickets: Kv<TicketRecord>
+		drops: Kv<DropRecord>
+		bubble: (bubbleId: BubbleId) => {
+			drops: Kv<DropRecord>
+		}
+	}
 }
 
 /** user's account data */
@@ -122,11 +132,6 @@ export type TicketServerside = {
 	timeLastUsed: number
 }
 
-/** private membership key, 64 random hex characters */
-export type SeatKey = string
-
-/** public hash of the seat key */
-
 export type VoidPrivs = {
 	canUpdateVoid: boolean
 	canDeleteVoid: boolean
@@ -160,4 +165,16 @@ export type BubbleRecord = Noid<Bubble>
 export type DropRecord = Noid<Drop>
 
 export type TicketRecord = Noid<Ticket>
+
+export type VoidPulse = {
+	voidId: VoidId
+	v: Void | null
+}
+
+export type DropPulse = {
+	voidId: VoidId
+	bubbleId: BubbleId
+	dropId: DropId
+	drop: Drop | null
+}
 

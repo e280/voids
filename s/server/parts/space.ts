@@ -1,11 +1,11 @@
 
 import {sub} from "@e280/stz"
-import {Database, Drop, Void} from "../types/types.js"
+import {Database, DropPulse, VoidPulse} from "../types/types.js"
 
 export class Space {
 	voidCount = 0
-	onVoid = sub<[voidId: string, Void | null]>()
-	onDrop = sub<[voidId: string, drop: Drop]>()
+	onVoid = sub<[pulse: VoidPulse]>()
+	onDrop = sub<[pulse: DropPulse]>()
 
 	constructor(public database: Database) {}
 

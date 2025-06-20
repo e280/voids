@@ -14,17 +14,18 @@ export function secureSeat<S extends Service>(
 
 	return secure<SeatClaimToken, S>(async claimToken => {
 		const {user, claim} = await authUser<SeatClaim>(claimToken)
+		const seatId = await hashHex(claim.seatKey)
 
 		const v = await space.database.voids.get(claim.voidId)
 		if (!v) throw new ExposedError(noMessage)
 
-		const validMembership = v.seats.includes(claim.seatKey)
+		const validMembership = v.seats.some(seat => seat.id === seatId)
 		if (!validMembership) throw new ExposedError(noMessage)
 
 		return fn({
 			user,
+			seatId,
 			seatKey: claim.seatKey,
-			seatId: await hashHex(claim.seatKey),
 			void: {...v, id: claim.voidId},
 		})
 	})

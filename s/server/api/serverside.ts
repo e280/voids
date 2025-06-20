@@ -13,6 +13,7 @@ import {Clientside, Serverside} from "./surface.js"
 import {secureSeat} from "./utils/secure-member.js"
 import {resolvePrivileges} from "../parts/resolve-privileges.js"
 import {DropRecord, Noid, TicketRecord, Vault, VoidRecord} from "../types/types.js"
+import { Hierarchy } from "../parts/hierarchy.js"
 
 export const setupServerside = (
 		space: Space,
@@ -53,7 +54,6 @@ export const setupServerside = (
 				return await database.voids.set(v.id, {
 					bulletin: v.bulletin,
 					seats: v.seats,
-					roles: v.roles,
 					bubbles: v.bubbles,
 					hierarchy: v.hierarchy,
 					latestActivityTime: Date.now(),
@@ -85,7 +85,7 @@ export const setupServerside = (
 					: ticket
 
 				await database.kv.transaction(() => [
-					database.void(voidId).store.write.set(v),
+					database.void(voidId).self.write.set(v),
 					database.void(voidId).tickets.write.set(ticketId, newTicket),
 				])
 
@@ -127,12 +127,12 @@ export const setupServerside = (
 				return v
 			},
 			async update(partial) {
-				const privileges = resolvePrivileges(v, seatKey)
+				const hierarchy = new Hierarchy(v.hierarchy)
+				const privileges = hierarchy.resolvePrivileges(hierarchy.root, seatId)
 				if (!privileges.canUpdateVoid) throw new ExposedError("not allowed")
 
 				const v2 = {...v, ...partial}
 				const updated: VoidRecord = {
-					roles: v2.roles,
 					bubbles: v2.bubbles,
 					seats: v2.seats,
 					bulletin: v2.bulletin,
@@ -144,13 +144,15 @@ export const setupServerside = (
 			},
 
 			async delete() {
-				const privileges = resolvePrivileges(v, seatKey)
+				const hierarchy = new Hierarchy(v.hierarchy)
+				const privileges = hierarchy.resolvePrivileges(hierarchy.root, seatId)
 				if (!privileges.canDeleteVoid) throw new ExposedError("not allowed")
 				await space.deleteVoid(v.id)
 			},
 
 			async wipeAllDrops() {
-				const privileges = resolvePrivileges(v, seatKey)
+				const hierarchy = new Hierarchy(v.hierarchy)
+				const privileges = hierarchy.resolvePrivileges(hierarchy.root, seatId)
 				if (!privileges.canWipeVoid) throw new ExposedError("not allowed")
 				await database.void(v.id).drops.clear()
 			},
@@ -163,13 +165,17 @@ export const setupServerside = (
 				// filter out the seat
 				v.seats = v.seats.filter(seat => seat.id !== seatId)
 
+				const hierarchy = new Hierarchy(v.hierarchy)
+
 				// eliminate seat id from all hierarchy role assignments
-				for (const h of v.hierarchy) {
-					if ("assignments" in h) {
-						for (const entry of h.assignments)
+				for (const node of hierarchy.nodes.values()) {
+					if ("assignments" in node) {
+						for (const entry of node.assignments)
 							entry[1] = entry[1].filter(id => id !== seatId)
 					}
 				}
+
+				v.hierarchy = hierarchy.toData()
 
 				// update the void
 				await database.voids.set(v.id, {
@@ -179,27 +185,36 @@ export const setupServerside = (
 			},
 		})),
 
-		drops: secureSeat(space, ({seatKey, seatId, void: v}) => ({
+		drops: secureSeat(space, ({seatId, void: v}) => ({
 			async list(bubbleId) {
-				const privileges = resolvePrivileges(v, seatKey, bubbleId)
+				const hierarchy = new Hierarchy(v.hierarchy)
+				const bubbleNode = hierarchy.findNodeForBubble(bubbleId)
+				const privileges = hierarchy.resolvePrivileges(bubbleNode.id, seatId)
+
 				if (!privileges.canReadDrops) throw new ExposedError("not allowed")
-				const drops = await collect(database.void(v.id).drops.bubble(bubbleId).entries())
+				const drops = await collect(database.void(v.id).bubble(bubbleId).drops.entries())
 				return drops.map(([id, drop]) => ({...drop, id}))
 			},
 			async post(bubbleId, payload) {
-				const privileges = resolvePrivileges(v, seatKey, bubbleId)
+				const hierarchy = new Hierarchy(v.hierarchy)
+				const bubbleNode = hierarchy.findNodeForBubble(bubbleId)
+				const privileges = hierarchy.resolvePrivileges(bubbleNode.id, seatId)
+
 				if (!privileges.canPostDrops)
 					throw new ExposedError("not allowed")
 				const id = Hex.random()
 				const drop: DropRecord = {payload, lifespan: null, seatId, time: Date.now()}
-				await database.void(v.id).drops.bubble(bubbleId).set(id, drop)
+				await database.void(v.id).bubble(bubbleId).drops.set(id, drop)
 				return {...drop, id}
 			},
 			async delete(bubbleId, dropIds) {
-				const privileges = resolvePrivileges(v, seatKey, bubbleId)
+				const hierarchy = new Hierarchy(v.hierarchy)
+				const bubbleNode = hierarchy.findNodeForBubble(bubbleId)
+				const privileges = hierarchy.resolvePrivileges(bubbleNode.id, seatId)
+
 				if (!privileges.canDeleteDrops)
 					throw new ExposedError("not allowed")
-				await database.void(v.id).drops.bubble(bubbleId).del(...dropIds)
+				await database.void(v.id).bubble(bubbleId).drops.del(...dropIds)
 			},
 		})),
 

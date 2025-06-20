@@ -24,7 +24,7 @@ export function makeRelay(kv: Kv) {
 		}
 	}
 
-	repeatly(120_000, async() => await space.deleteExpiredVoids())
+	repeatly(120_000, async() => await space.pruneVoidsAndDrops())
 
 	return {accept}
 }

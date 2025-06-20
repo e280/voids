@@ -8,11 +8,11 @@ export function makeDatabase(kv: Kv): Database {
 		vaults: kv.scope(`vault`),
 		voids: kv.scope(`void`),
 		void: voidId => ({
-			store: kv.scope(`void`).store(voidId),
-			tickets: kv.scope(`void.tickets:${voidId}`),
-			drops: kv.scope(`void.drops:${voidId}`),
+			self: kv.scope(`void`).store(voidId),
+			tickets: kv.scope(`void.ticket:${voidId}`),
+			drops: kv.scope(`void.drop:${voidId}`),
 			bubble: bubbleId => ({
-				drops: kv.scope(`void.drops:${voidId}:${bubbleId}`)
+				drops: kv.scope(`void.drop:${voidId}:${bubbleId}`),
 			}),
 		}),
 	}

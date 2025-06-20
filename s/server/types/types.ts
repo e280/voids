@@ -2,6 +2,11 @@
 import {Kv, Store} from "@e280/kv"
 import {Nametag} from "@e280/authlocal/core"
 
+export type Stats = {
+	voidCount: number
+	pruneTime: number
+}
+
 /** 64 character hex string */
 export type Id = string
 
@@ -44,7 +49,7 @@ export type Database = {
 	vaults: Kv<VaultRecord>
 	voids: Kv<VoidRecord>
 	void: (voidId: VoidId) => {
-		store: Store<VoidRecord>
+		self: Store<VoidRecord>
 		tickets: Kv<TicketRecord>
 		drops: Kv<DropRecord>
 		bubble: (bubbleId: BubbleId) => {

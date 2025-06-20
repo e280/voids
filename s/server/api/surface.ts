@@ -1,11 +1,9 @@
 
 import {AsFns, Secure} from "@e280/renraku/node"
-import {Void, Drop, Ciphertext, UserId, VoidId, BubbleId, Vault, Noid, UserClaimToken, SeatClaimToken, TicketId, Ticket, TicketUpdate, SeatKey, VoidPulse, DropPulse} from "../types/types.js"
+import {Void, Drop, Ciphertext, UserId, VoidId, BubbleId, Vault, Noid, UserClaimToken, SeatClaimToken, TicketId, Ticket, TicketUpdate, SeatKey, VoidPulse, DropPulse, Stats} from "../types/types.js"
 
 export type Serverside = AsFns<{
-	stats: {
-		voidCount(): Promise<number>
-	}
+	stats(): Promise<Stats>
 
 	/** the vault is decryptable only by the user themselves, via authlocal. it's their account information, hidden from the server */
 	vault: Secure<UserClaimToken, {

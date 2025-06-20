@@ -23,10 +23,8 @@ export const setupServerside = (
 	const {database} = space
 
 	return {
-		stats: {
-			async voidCount() {
-				return space.voidCount
-			},
+		async stats() {
+			return space.stats
 		},
 
 		vault: secureUser(({user}) => ({
@@ -148,15 +146,13 @@ export const setupServerside = (
 			async delete() {
 				const privileges = resolvePrivileges(v, seatKey)
 				if (!privileges.canDeleteVoid) throw new ExposedError("not allowed")
-
-				await space.deleteAllDropsInVoid(v.id)
-				await database.voids.del(v.id)
+				await space.deleteVoid(v.id)
 			},
 
 			async wipeAllDrops() {
 				const privileges = resolvePrivileges(v, seatKey)
 				if (!privileges.canWipeVoid) throw new ExposedError("not allowed")
-				await space.deleteAllDropsInVoid(v.id)
+				await database.void(v.id).drops.clear()
 			},
 
 			async wipeMyDrops() {
@@ -187,7 +183,7 @@ export const setupServerside = (
 			async list(bubbleId) {
 				const privileges = resolvePrivileges(v, seatKey, bubbleId)
 				if (!privileges.canReadDrops) throw new ExposedError("not allowed")
-				const drops = await collect(database.void(v.id).bubble(bubbleId).drops.entries())
+				const drops = await collect(database.void(v.id).drops.bubble(bubbleId).entries())
 				return drops.map(([id, drop]) => ({...drop, id}))
 			},
 			async post(bubbleId, payload) {
@@ -196,14 +192,14 @@ export const setupServerside = (
 					throw new ExposedError("not allowed")
 				const id = Hex.random()
 				const drop: DropRecord = {payload, lifespan: null, seatId, time: Date.now()}
-				await database.void(v.id).bubble(bubbleId).drops.set(id, drop)
+				await database.void(v.id).drops.bubble(bubbleId).set(id, drop)
 				return {...drop, id}
 			},
 			async delete(bubbleId, dropIds) {
 				const privileges = resolvePrivileges(v, seatKey, bubbleId)
 				if (!privileges.canDeleteDrops)
 					throw new ExposedError("not allowed")
-				await database.void(v.id).bubble(bubbleId).drops.del(...dropIds)
+				await database.void(v.id).drops.bubble(bubbleId).del(...dropIds)
 			},
 		})),
 

@@ -8,12 +8,11 @@ import {Space} from "../parts/space.js"
 import {hashHex} from "../tools/hash-hex.js"
 import {constants} from "../../constants.js"
 import {Follower} from "../parts/follower.js"
+import {Hierarchy} from "../parts/hierarchy.js"
 import {secureUser} from "./utils/secure-user.js"
 import {Clientside, Serverside} from "./surface.js"
 import {secureSeat} from "./utils/secure-member.js"
-import {resolvePrivileges} from "../parts/resolve-privileges.js"
 import {DropRecord, Noid, TicketRecord, Vault, VoidRecord} from "../types/types.js"
-import { Hierarchy } from "../parts/hierarchy.js"
 
 export const setupServerside = (
 		space: Space,

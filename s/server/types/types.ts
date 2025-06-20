@@ -79,9 +79,8 @@ export type Void = {
 	id: VoidId
 	bulletin: Ciphertext
 	seats: Seat[]
-	roles: Role[]
 	bubbles: Bubble[]
-	hierarchy: Hierarchy
+	hierarchy: HierarchyData
 	bans?: Ciphertext
 }
 
@@ -99,7 +98,11 @@ export type Seat = {
 }
 
 /** hierarchy describes the structure of how roles flow and ux for how bubbles are organized */
-export type Hierarchy = HierNode[]
+export type HierarchyData = {
+	root: HierId
+	nodes: HierNode[]
+	roles: Role[]
+}
 export type HierNode = HierBranch | HierBubble
 export type HierBasics = {
 	id: HierId
@@ -139,7 +142,7 @@ export type TicketServerside = {
 	timeLastUsed: number
 }
 
-export type VoidPrivs = {
+export type VoidPrivileges = {
 	canUpdateVoid: boolean
 	canDeleteVoid: boolean
 	canWipeVoid: boolean
@@ -148,7 +151,7 @@ export type VoidPrivs = {
 	canWriteBulletin: boolean
 }
 
-export type BubblePrivs = {
+export type BubblePrivileges = {
 	canSeeBubbles: boolean
 	canWriteHeader: boolean
 	canReadDrops: boolean
@@ -156,15 +159,15 @@ export type BubblePrivs = {
 	canDeleteDrops: boolean
 }
 
-export type Privileges = {[K in keyof (VoidPrivs & BubblePrivs)]: boolean}
+export type Privileges = {[K in keyof (VoidPrivileges & BubblePrivileges)]: boolean}
 
 export type Role = {
 	id: RoleId
 	label: Ciphertext
-	privs: Partial<VoidPrivs & BubblePrivs>
+	privileges: Partial<VoidPrivileges & BubblePrivileges>
 }
 
-export type RoleAssignment = [id: RoleId, SeatId[]]
+export type RoleAssignment = [roleId: RoleId, seatIds: SeatId[]]
 
 export type VaultRecord = Noid<Vault>
 export type VoidRecord = {latestActivityTime: number} & Noid<Void>

@@ -53,7 +53,6 @@ export const setupServerside = (
 				return await database.voids.set(v.id, {
 					bulletin: v.bulletin,
 					seats: v.seats,
-					bubbles: v.bubbles,
 					hierarchy: v.hierarchy,
 					latestActivityTime: Date.now(),
 				})
@@ -132,7 +131,6 @@ export const setupServerside = (
 
 				const v2 = {...v, ...partial}
 				const updated: VoidRecord = {
-					bubbles: v2.bubbles,
 					seats: v2.seats,
 					bulletin: v2.bulletin,
 					hierarchy: v2.hierarchy,

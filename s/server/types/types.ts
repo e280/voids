@@ -79,16 +79,7 @@ export type Void = {
 	id: VoidId
 	bulletin: Ciphertext
 	seats: Seat[]
-	bubbles: Bubble[]
 	hierarchy: HierarchyData
-	bans?: Ciphertext
-}
-
-/** a chat room */
-export type Bubble = {
-	id: BubbleId
-	header: Ciphertext
-	seats: SeatId[]
 }
 
 /** a participant in a void */
@@ -114,6 +105,7 @@ export type HierBranch = {
 } & HierBasics
 export type HierBubble = {
 	bubbleId: BubbleId
+	header: Ciphertext
 } & HierBasics
 
 /** an event in a chatroom, like a message or something */
@@ -171,7 +163,6 @@ export type RoleAssignment = [roleId: RoleId, seatIds: SeatId[]]
 
 export type VaultRecord = Noid<Vault>
 export type VoidRecord = {latestActivityTime: number} & Noid<Void>
-export type BubbleRecord = Noid<Bubble>
 export type DropRecord = Noid<Drop>
 
 export type TicketRecord = Noid<Ticket>

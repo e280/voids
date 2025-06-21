@@ -33,6 +33,6 @@ our database is useless.. garbled messages.. unreadable vaults.. just noise..
 the server shuffles ciphertext around.. only users can decrypt it.. ignorance is bliss..  
 
 **cypherpunk vibes, buildercore energy..**  
-for more tech details, read [CYPHERPUNK.md](CYPHERPUNK.md)..  
+for more tech details, read [CYPHERPUNKS.md](CYPHERPUNKS.md)..  
 voids is an [e280](https://e280.org/) project.. open source.. self-host if you're paranoid.. star us on github, it's the only way we're paid..  
 

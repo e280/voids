@@ -1,7 +1,7 @@
 
 import {Kv} from "@e280/kv"
 import {Space} from "./parts/space.js"
-import {Clientside} from "./api/schema.js"
+import {Clientside} from "./api/surface.js"
 import {Follower} from "./parts/follower.js"
 import {repeatly} from "./tools/repeatly.js"
 import {makeDatabase} from "./parts/database.js"
@@ -24,8 +24,8 @@ export function makeRelay(kv: Kv) {
 		}
 	}
 
-	repeatly(120_000, async() => await space.deleteExpiredVoids())
+	const stop = repeatly(120_000, async() => await space.pruneVoidsAndDrops())
 
-	return {accept}
+	return {accept, stop}
 }
 

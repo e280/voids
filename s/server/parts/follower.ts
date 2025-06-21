@@ -2,7 +2,7 @@
 import {MapG} from "@e280/stz"
 
 import {Space} from "./space.js"
-import {Clientside} from "../api/schema.js"
+import {Clientside} from "../api/surface.js"
 
 export class Follower {
 	#watchers = new MapG<string, () => void>()
@@ -18,14 +18,14 @@ export class Follower {
 		this.#unfollowAll()
 		for (const voidId of voidIds) {
 			this.#watchers.guarantee(voidId, () => {
-				const stopVoids = this.space.onVoid(async(vid, v) => {
-					if (vid === voidId)
-						await this.clientside.pulseVoid(vid, v)
+				const stopVoids = this.space.onVoid(async pulse => {
+					if (pulse.voidId === voidId)
+						await this.clientside.pulseVoid(pulse)
 				})
 
-				const stopDrops = this.space.onDrop(async(id, drop) => {
-					if (id === voidId)
-						await this.clientside.pulseDrop(voidId, drop)
+				const stopDrops = this.space.onDrop(async pulse => {
+					if (pulse.voidId === voidId)
+						await this.clientside.pulseDrop(pulse)
 				})
 
 				return () => {

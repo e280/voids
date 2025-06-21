@@ -1,12 +1,12 @@
 
-import {Clientside} from "./schema.js"
+import {Clientside} from "./surface.js"
 
 export const setupClientside = (): Clientside => ({
-	async pulseDrop(voidId, drop) {
-		console.log("fresh drop", voidId, drop)
+	async pulseDrop(pulse) {
+		console.log("drop pulse", pulse)
 	},
-	async pulseVoid(voidId, v) {
-		console.log("void updated", voidId, v)
+	async pulseVoid(pulse) {
+		console.log("void pulse", pulse)
 	},
 })
 

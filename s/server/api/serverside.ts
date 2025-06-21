@@ -1,125 +1,226 @@
 
-import {verifyClaim} from "@e280/authlocal/core"
-import {Authorize, ExposedError, secure} from "@e280/renraku/node"
+import {Hex} from "@e280/stz"
+import {collect} from "@e280/kv"
+import {ExposedError} from "@e280/renraku/node"
 
-import {Void} from "../parts/types.js"
+import {noid} from "../tools/noid.js"
 import {Space} from "../parts/space.js"
+import {hashHex} from "../tools/hash-hex.js"
 import {constants} from "../../constants.js"
 import {Follower} from "../parts/follower.js"
-import {Caps} from "../parts/capabilities.js"
-import {RoleKeeper} from "../parts/role-keeper.js"
-import {AuthClaim, Clientside, Serverside} from "./schema.js"
+import {Hierarchy} from "../parts/hierarchy.js"
+import {secureUser} from "./utils/secure-user.js"
+import {Clientside, Serverside} from "./surface.js"
+import {secureSeat} from "./utils/secure-member.js"
+import {DropRecord, Noid, TicketRecord, Vault, VoidRecord} from "../types.js"
 
 export const setupServerside = (
 		space: Space,
 		follower: Follower,
 		_clientside: Clientside,
-	): Serverside => ({
+	): Serverside => {
 
-	anon: {
-		async getVoidCount() {
-			return space.voidCount
+	const {database} = space
+
+	return {
+		async stats() {
+			return space.stats
 		},
-	},
 
-	user: secure(async auth => {
-		const {proof} = await verifyClaim<AuthClaim>({
-			claimToken: auth.claimToken,
-			appOrigins: [constants.appOrigin],
-			allowedAudiences: [constants.serverOrigin],
-		})
+		vault: secureUser(({user}) => ({
+			async save(vault: Noid<Vault>) {
+				await database.vaults.set(user.id, vault)
+			},
+			async load() {
+				const vault = await database.vaults.get(user.id)
+				return vault
+					? {...vault, id: user.id}
+					: null
+			},
+			async deliverInvite(recipientId, invite) {
+				const vault = await database.vaults.get(recipientId)
+				if (!vault) return false
+				vault.invites = [...vault.invites, invite].slice(-constants.maxInvites)
+				await database.vaults.set(recipientId, vault)
+				return true
+			},
+		})),
 
-		const userId = proof.nametag.id
+		void: secureUser(({user}) => ({
+			async create(v) {
+				if (await database.voids.has(v.id))
+					throw new ExposedError("this void already exists")
+				await database.voids.set(v.id, {
+					bulletin: v.bulletin,
+					seats: v.seats,
+					hierarchy: v.hierarchy,
+					latestActivityTime: Date.now(),
+				})
+				space.stats.voidCount++
+			},
+			async join(voidId, ticketId) {
+				const v = await database.voids.require(voidId)
+				const ticket = await database.void(voidId).tickets.require(ticketId)
 
-		function voidCapabilities(v: Void) {
-			const roles = new RoleKeeper(v.roles).get(userId)
-			return space.capabilities.get(roles)
-		}
+				if (v.seats.length > constants.maxVoidMembers)
+					throw new ExposedError("exceeded max void members")
 
-		async function getVoidAndCaps(voidId: string): Promise<[Void, Caps]> {
-			const v = await space.requireVoid(voidId)
-			return [v, voidCapabilities(v)]
-		}
+				ticket.uses++
+				ticket.timeLastUsed = Date.now()
+				if (ticket.remaining !== null)
+					ticket.remaining--
 
-		return {
-			async createVoid(voidId, options) {
-				const already = await space.getVoid(voidId)
-				if (already) throw new Error("this void already exists")
+				const seatKey = Hex.random()
+				const seatId = await hashHex(seatKey)
+				v.seats.push({id: seatId, joinedTime: Date.now()})
 
-				const roles = new RoleKeeper()
-				roles.get(userId).add("admin")
+				const ticketIsExpired = (
+					(ticket.expiresAt !== null && ticket.expiresAt < Date.now()) ||
+					(ticket.remaining !== null && ticket.remaining <= 0)
+				)
 
+				const newTicket = ticketIsExpired
+					? undefined
+					: ticket
+
+				await database.kv.transaction(() => [
+					database.void(voidId).self.write.set(v),
+					database.void(voidId).tickets.write.set(ticketId, newTicket),
+				])
+
+				return seatKey
+			},
+		})),
+
+		tickets: secureSeat(space, ({void: v}) => ({
+			async list() {
+				const records = await collect(database.void(v.id).tickets.entries())
+				return records.map(([id, t]) => ({...t, id}))
+			},
+			async create(ticket) {
+				const id = Hex.random()
 				const now = Date.now()
-
-				return space.setVoid({
-					id: voidId,
-					pinned: options.pinned,
-					roles: roles.toAssignments(),
-					latestActivityTime: now,
-					peekers: [[userId, now]],
+				const record: TicketRecord = {
+					...ticket,
+					timeCreated: now,
+					timeLastUsed: now,
+					remaining: ticket.remaining,
+				}
+				await database.void(v.id).tickets.set(id, record)
+				return {...record, id}
+			},
+			async update(ticket) {
+				const already = await database.void(v.id).tickets.require(ticket.id)
+				await database.void(v.id).tickets.set(ticket.id, {
+					...already,
+					remaining: ticket.remaining,
 				})
 			},
+			async delete(...ids) {
+				await database.void(v.id).tickets.del(...ids)
+			},
+		})),
 
-			async readVoid(voidId) {
-				const v = await space.getVoid(voidId)
-				if (v) await space.peekIntoVoid(voidId, userId)
+		knownVoid: secureSeat(space, ({user, seatKey, seatId, void: v}) => ({
+			async read() {
 				return v
 			},
+			async update(partial) {
+				const hierarchy = new Hierarchy(v.hierarchy)
+				const privileges = hierarchy.resolvePrivileges(hierarchy.root, seatId)
+				if (!privileges.canUpdateVoid) throw new ExposedError("not allowed")
 
-			async updateVoid(voidId, options) {
-				const v = await space.requireVoid(voidId)
-				const caps = voidCapabilities(v)
+				const v2 = {...v, ...partial}
+				const updated: VoidRecord = {
+					seats: v2.seats,
+					bulletin: v2.bulletin,
+					hierarchy: v2.hierarchy,
+					latestActivityTime: Date.now(),
+				}
+				await database.voids.set(v.id, updated)
+				return {...updated, id: v.id}
+			},
 
-				if (options.pinned) {
-					if (!caps.canWritePinned) throw new ExposedError("unauthorized action")
-					v.pinned = options.pinned
+			async delete() {
+				const hierarchy = new Hierarchy(v.hierarchy)
+				const privileges = hierarchy.resolvePrivileges(hierarchy.root, seatId)
+				if (!privileges.canDeleteVoid) throw new ExposedError("not allowed")
+				await space.deleteVoid(v.id)
+			},
+
+			async wipeAllDrops() {
+				const hierarchy = new Hierarchy(v.hierarchy)
+				const privileges = hierarchy.resolvePrivileges(hierarchy.root, seatId)
+				if (!privileges.canWipeVoid) throw new ExposedError("not allowed")
+				await database.void(v.id).drops.clear()
+			},
+
+			async wipeMyDrops() {
+				await space.wipeDropsBySeat(v.id, seatId)
+			},
+
+			async destroyMySeat() {
+				// filter out the seat
+				v.seats = v.seats.filter(seat => seat.id !== seatId)
+
+				const hierarchy = new Hierarchy(v.hierarchy)
+
+				// eliminate seat id from all hierarchy role assignments
+				for (const node of hierarchy.nodes.values()) {
+					if ("assignments" in node) {
+						for (const entry of node.assignments)
+							entry[1] = entry[1].filter(id => id !== seatId)
+					}
 				}
 
-				if (options.roles) {
-					if (!caps.canAssignRoles) throw new ExposedError("unauthorized action")
-					v.roles = options.roles
-				}
+				v.hierarchy = hierarchy.toData()
 
-				return space.setVoid(v)
+				// update the void
+				await database.voids.set(v.id, {
+					...noid(v),
+					latestActivityTime: Date.now(),
+				})
 			},
+		})),
 
-			async deleteVoid(voidId) {
-				const [,caps] = await getVoidAndCaps(voidId)
-				if (!caps.canDeleteVoid) throw new ExposedError("unauthorized action")
-				await space.deleteVoids(voidId)
+		drops: secureSeat(space, ({seatId, void: v}) => ({
+			async list(bubbleId) {
+				const hierarchy = new Hierarchy(v.hierarchy)
+				const bubbleNode = hierarchy.findNodeForBubble(bubbleId)
+				const privileges = hierarchy.resolvePrivileges(bubbleNode.id, seatId)
+
+				if (!privileges.canReadDrops) throw new ExposedError("not allowed")
+				const drops = await collect(database.void(v.id).bubble(bubbleId).drops.entries())
+				return drops.map(([id, drop]) => ({...drop, id}))
 			},
+			async post(bubbleId, payload) {
+				const hierarchy = new Hierarchy(v.hierarchy)
+				const bubbleNode = hierarchy.findNodeForBubble(bubbleId)
+				const privileges = hierarchy.resolvePrivileges(bubbleNode.id, seatId)
 
-			async postDrop(voidId, payload) {
-				const [v, caps] = await getVoidAndCaps(voidId)
-				if (!caps.canPostDrops) throw new ExposedError("unauthorized action")
-				if (caps.isMuted) throw new ExposedError("you've been muted in this void")
-				return space.postDrop(v, payload)
+				if (!privileges.canPostDrops)
+					throw new ExposedError("not allowed")
+				const id = Hex.random()
+				const drop: DropRecord = {payload, lifespan: null, seatId, time: Date.now()}
+				await database.void(v.id).bubble(bubbleId).drops.set(id, drop)
+				return {...drop, id}
 			},
+			async delete(bubbleId, dropIds) {
+				const hierarchy = new Hierarchy(v.hierarchy)
+				const bubbleNode = hierarchy.findNodeForBubble(bubbleId)
+				const privileges = hierarchy.resolvePrivileges(bubbleNode.id, seatId)
 
-			async listDrops(voidId) {
-				await space.peekIntoVoid(voidId, userId)
-				return space.listDropsInVoid(voidId)
+				if (!privileges.canDeleteDrops)
+					throw new ExposedError("not allowed")
+				await database.void(v.id).bubble(bubbleId).drops.del(...dropIds)
 			},
+		})),
 
-			async deleteDrops(voidId: string, dropIds: string[]) {
-				const [,caps] = await getVoidAndCaps(voidId)
-				if (!caps.canDeleteDrops) throw new ExposedError("unauthorized action")
-				await space.deleteDrops(voidId, dropIds)
-			},
-
-			async wipeVoidDrops(voidId: string) {
-				const [,caps] = await getVoidAndCaps(voidId)
-				if (!caps.canDeleteDrops) throw new ExposedError("unauthorized action")
-				await space.wipeVoidDrops(voidId)
-			},
-
+		sync: secureUser(() => ({
 			async follow(voidIds) {
-				await Promise.all(
-					voidIds.map(async voidId => space.peekIntoVoid(voidId, userId))
-				)
 				follower.follow(voidIds)
 			},
-		} satisfies Authorize<Serverside["user"]>
-	})
-})
+		})),
+	}
+}
 

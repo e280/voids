@@ -1,115 +1,82 @@
 
+import {sub} from "@e280/stz"
 import {collect} from "@e280/kv"
-import {Hex, sub} from "@e280/stz"
-
 import {constants} from "../../constants.js"
-import {normalizePeekers} from "./peekers.js"
-import {Capabilities} from "./capabilities.js"
-import {Database, Drop, Peeker, Void} from "./types.js"
+import {Database, DropPulse, SeatId, Stats, VoidId, VoidPulse} from "../types.js"
 
 export class Space {
-	voidCount = 0
-	onVoid = sub<[voidId: string, Void | null]>()
-	onDrop = sub<[voidId: string, drop: Drop]>()
-	capabilities = new Capabilities()
-
-	constructor(private database: Database) {}
-
-	async setVoid(v: Void) {
-		await this.database.voids.set(v.id, v)
-		this.onVoid.pub(v.id, v)
-		this.#updateVoidCount()
-		return v
+	stats: Stats = {
+		voidCount: 0,
+		pruneTime: 0,
 	}
 
-	async getVoid(id: string) {
-		return this.database.voids.get(id)
-	}
+	onVoid = sub<[pulse: VoidPulse]>()
+	onDrop = sub<[pulse: DropPulse]>()
 
-	async deleteVoids(...ids: string[]) {
-		await Promise.all(ids.map(async id => this.wipeVoidDrops(id)))
-		await this.database.voids.del(...ids)
-		this.#updateVoidCount()
-		for (const id of ids)
-			this.onVoid.pub(id, null)
-	}
+	constructor(public database: Database) {}
 
-	async requireVoid(id: string) {
-		return this.database.voids.require(id)
-	}
-
-	async peekIntoVoid(voidId: string, userId: string) {
-		const v = await this.database.voids.require(voidId)
-		const newPeeker: Peeker = [userId, Date.now()]
-		v.peekers = normalizePeekers([...v.peekers, newPeeker])
-		await this.database.voids.set(voidId, v)
-		return v
-	}
-
-	async listDropsInVoid(voidId: string) {
-		await this.database.voids.require(voidId)
-		const drops = this.database.drops(voidId)
-		const all = await collect(drops.values())
-
-		const recent = all
-			.filter(d => d.time > (Date.now() - constants.dropLifespan))
-			.sort((a, b) => a.time - b.time)
-			.slice(-constants.maxDropsPerVoid)
-
-		const recentSet = new Set(recent)
-
-		const old = all
-			.filter(d => !recentSet.has(d))
-
-		// delete olds
-		await drops.del(...old.map(d => d.id))
-
-		// return recents
-		return recent
-	}
-
-	async postDrop(v: Void, payload: string) {
-		const now = Date.now()
-
-		v.latestActivityTime = now
-		await this.database.voids.set(v.id, v)
-
-		const drop: Drop = {
-			id: Hex.random(32),
-			time: now,
-			payload,
-		}
-
-		await this.database.drops(v.id).set(drop.id, drop)
-		this.onDrop.pub(v.id, drop)
-		return drop
-	}
-
-	async deleteDrops(voidId: string, dropIds: string[]) {
-		await this.database.drops(voidId).del(...dropIds)
-	}
-
-	async wipeVoidDrops(voidId: string) {
-		await this.database.drops(voidId).clear()
-	}
-
-	async deleteExpiredVoids() {
-		const now = Date.now()
-		const expiredIds = new Set<string>()
-
-		for await (const v of this.database.voids.values()) {
-			if (v.latestActivityTime < (now - constants.idleVoidLifespan))
-				expiredIds.add(v.id)
-		}
-
-		await this.deleteVoids(...expiredIds)
-	}
-
-	async #updateVoidCount() {
+	async updateVoidCount() {
 		let count = 0
 		for await (const _ of this.database.voids.keys())
 			count += 1
-		this.voidCount = count
+		this.stats.voidCount = count
+	}
+
+	async deleteVoid(voidId: VoidId) {
+		const v = this.database.void(voidId)
+		await v.drops.clear()
+		await v.tickets.clear()
+		await v.self.set(undefined)
+		this.stats.voidCount--
+		this.onVoid.pub({voidId, v: null})
+	}
+
+	async wipeDropsBySeat(voidId: VoidId, seatId: SeatId) {
+		const drops = await collect(this.database.void(voidId).drops.entries())
+		const myDropKeys = drops
+			.filter(([,drop]) => drop.seatId === seatId)
+			.map(([key]) => key)
+		await this.database.void(voidId).drops.del(...myDropKeys)
+	}
+
+	async pruneVoidsAndDrops() {
+		const start = Date.now()
+
+		// delete expired voids
+		{
+			const now = Date.now()
+			const expiredVoidIds: string[] = []
+
+			for await (const [voidId, v] of this.database.voids.entries()) {
+				if (v.latestActivityTime < (now - constants.idleVoidLifespan))
+					expiredVoidIds.push(voidId)
+			}
+
+			for (const voidId of expiredVoidIds)
+				await this.deleteVoid(voidId)
+		}
+
+		// delete all expired drops
+		{
+			const now = Date.now()
+
+			for await (const voidId of this.database.voids.keys()) {
+				const expiredDropKeys: string[] = []
+
+				for await (const [key, drop] of this.database.void(voidId).drops.entries()) {
+					const expiresAt = drop.time + (drop.lifespan ?? constants.dropLifespan)
+					const isExpired = now > expiresAt
+					if (isExpired)
+						expiredDropKeys.push(key)
+				}
+
+				await this.database.void(voidId).drops.del(...expiredDropKeys)
+			}
+		}
+
+		await this.updateVoidCount()
+
+		this.stats.pruneTime = Date.now() - start
 	}
 }
 

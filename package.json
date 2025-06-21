@@ -47,12 +47,12 @@
 		"encrypted chat"
 	],
 	"author": "Chase Moskal <chasemoskal@gmail.com>",
-	"homepage": "https://github.com/e280/cocoon#readme",
+	"homepage": "https://github.com/e280/voids#readme",
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/e280/cocoon.git"
+		"url": "git+https://github.com/e280/voids.git"
 	},
 	"bugs": {
-		"url": "https://github.com/e280/cocoon/issues"
+		"url": "https://github.com/e280/voids/issues"
 	}
 }

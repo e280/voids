@@ -15,7 +15,7 @@ export type Serverside = AsFns<{
 	/** a void is a community hub, which can contain chatrooms */
 	void: Secure<UserClaimToken, {
 		create(o: Void): Promise<void>
-		join(voidId: VoidId, ticketId: TicketId): Promise<SeatKey>
+		join(voidId: VoidId, ticketId: TicketId): Promise<{seatKey: SeatKey}>
 	}>
 
 	/** fns for void members */

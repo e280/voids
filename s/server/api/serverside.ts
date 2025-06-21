@@ -88,7 +88,7 @@ export const setupServerside = (
 					database.void(voidId).tickets.write.set(ticketId, newTicket),
 				])
 
-				return seatKey
+				return {seatKey}
 			},
 		})),
 

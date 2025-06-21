@@ -7,8 +7,8 @@ import {HierBranch, HierBubble, Role, Seat, Void} from "../../server/types.js"
 export async function makeVoid(cryption: Cryption) {
 	const voidId = cryption.symkey.id
 
-	const seatKey = Hex.random()
-	const seatId = await hashHex(seatKey)
+	const adminSeatKey = Hex.random()
+	const adminSeatId = await hashHex(adminSeatKey)
 
 	const adminRole: Role = {
 		id: Hex.random(),
@@ -38,12 +38,12 @@ export async function makeVoid(cryption: Cryption) {
 	const branch: HierBranch = {
 		id: Hex.random(),
 		label: await cryption.encrypt("label"),
-		assignments: [[adminRole.id, [seatId]]],
+		assignments: [[adminRole.id, [adminSeatId]]],
 		children: [bubble.id]
 	}
 
 	const seat: Seat = {
-		id: seatId,
+		id: adminSeatId,
 		joinedTime: Date.now()
 	}
 
@@ -58,6 +58,6 @@ export async function makeVoid(cryption: Cryption) {
 		seats: [seat],
 	}
 
-	return v
+	return {void: v, adminSeatKey}
 }
 

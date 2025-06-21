@@ -24,8 +24,8 @@ export function makeRelay(kv: Kv) {
 		}
 	}
 
-	repeatly(120_000, async() => await space.pruneVoidsAndDrops())
+	const stop = repeatly(120_000, async() => await space.pruneVoidsAndDrops())
 
-	return {accept}
+	return {accept, stop}
 }
 

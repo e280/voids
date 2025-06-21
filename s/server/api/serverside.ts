@@ -50,12 +50,13 @@ export const setupServerside = (
 			async create(v) {
 				if (await database.voids.has(v.id))
 					throw new ExposedError("this void already exists")
-				return await database.voids.set(v.id, {
+				await database.voids.set(v.id, {
 					bulletin: v.bulletin,
 					seats: v.seats,
 					hierarchy: v.hierarchy,
 					latestActivityTime: Date.now(),
 				})
+				space.stats.voidCount++
 			},
 			async join(voidId, ticketId) {
 				const v = await database.voids.require(voidId)

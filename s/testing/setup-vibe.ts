@@ -7,7 +7,19 @@ import {makeRelay} from "../server/relay.js"
 import {setupClientside} from "../server/api/clientside.js"
 import {SeatClaim, SeatKey, UserClaim, VoidId} from "../server/types.js"
 
-export function setupVibe() {
+export type Vibe = Awaited<ReturnType<typeof setupVibe>>
+
+export function vibes(
+		fn: (vibe: Vibe) => Promise<void>,
+	) {
+	return async() => {
+		const vibe = await setupVibe()
+		await fn(vibe)
+		vibe.relay.stop()
+	}
+}
+
+export async function setupVibe() {
 	const authlocal = new Mock({
 		appOrigin: constants.appOrigin,
 		authorityOrigin: "https://authlocal.org",
@@ -41,6 +53,10 @@ export function setupVibe() {
 		return relay.accept(clientside)
 	}
 
-	return {relay, connect, authenticate}
+	return {
+		relay,
+		connect,
+		authenticate,
+	}
 }
 

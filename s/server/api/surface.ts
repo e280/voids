@@ -1,6 +1,6 @@
 
 import {AsFns, Secure} from "@e280/renraku/node"
-import {Void, Drop, Ciphertext, UserId, VoidId, BubbleId, Vault, Noid, UserClaimToken, SeatClaimToken, TicketId, Ticket, TicketUpdate, SeatKey, VoidPulse, DropPulse, Stats} from "../types/types.js"
+import {Void, Drop, Ciphertext, UserId, VoidId, BubbleId, Vault, Noid, UserClaimToken, SeatClaimToken, TicketId, Ticket, TicketUpdate, SeatKey, VoidPulse, DropPulse, Stats} from "../types.js"
 
 export type Serverside = AsFns<{
 	stats(): Promise<Stats>

@@ -12,7 +12,7 @@ import {Hierarchy} from "../parts/hierarchy.js"
 import {secureUser} from "./utils/secure-user.js"
 import {Clientside, Serverside} from "./surface.js"
 import {secureSeat} from "./utils/secure-member.js"
-import {DropRecord, Noid, TicketRecord, Vault, VoidRecord} from "../types/types.js"
+import {DropRecord, Noid, TicketRecord, Vault, VoidRecord} from "../types.js"
 
 export const setupServerside = (
 		space: Space,

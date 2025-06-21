@@ -2,7 +2,7 @@
 import {Hex} from "@e280/stz"
 import {Cryption} from "../types.js"
 import {hashHex} from "../../server/tools/hash-hex.js"
-import {HierBranch, HierBubble, Role, Seat, Void} from "../../server/types/types.js"
+import {HierBranch, HierBubble, Role, Seat, Void} from "../../server/types.js"
 
 export async function makeVoid(cryption: Cryption) {
 	const voidId = cryption.symkey.id

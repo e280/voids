@@ -3,7 +3,7 @@ import {ExposedError, Service, secure} from "@e280/renraku"
 import {authUser} from "./auth-user.js"
 import {Space} from "../../parts/space.js"
 import {hashHex} from "../../tools/hash-hex.js"
-import {SeatAuth, SeatClaim, SeatClaimToken} from "../../types/types.js"
+import {SeatAuth, SeatClaim, SeatClaimToken} from "../../types.js"
 
 const noMessage = "no such void, or you're not a member"
 

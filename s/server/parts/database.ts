@@ -1,6 +1,6 @@
 
 import {Kv} from "@e280/kv"
-import {Database} from "../types/types.js"
+import {Database} from "../types.js"
 
 export function makeDatabase(kv: Kv): Database {
 	return {

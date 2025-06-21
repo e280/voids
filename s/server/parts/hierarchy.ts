@@ -1,7 +1,7 @@
 
 import {dedupe, MapG} from "@e280/stz"
 import {resolvePrivileges} from "./resolve-privileges.js"
-import {BubbleId, HierarchyData, HierId, HierNode, Privileges, Role, RoleId, SeatId} from "../types/types.js"
+import {BubbleId, HierarchyData, HierId, HierNode, Privileges, Role, RoleId, SeatId} from "../types.js"
 
 export class Hierarchy {
 	root: HierId

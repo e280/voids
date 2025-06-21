@@ -5,7 +5,7 @@ import {Mock, Time} from "@e280/authlocal/mock"
 import {constants} from "../constants.js"
 import {makeRelay} from "../server/relay.js"
 import {setupClientside} from "../server/api/clientside.js"
-import {SeatClaim, SeatKey, UserClaim, VoidId} from "../server/types/types.js"
+import {SeatClaim, SeatKey, UserClaim, VoidId} from "../server/types.js"
 
 export function setupVibe() {
 	const authlocal = new Mock({

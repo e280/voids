@@ -2,7 +2,7 @@
 import {sub} from "@e280/stz"
 import {collect} from "@e280/kv"
 import {constants} from "../../constants.js"
-import {Database, DropPulse, SeatId, Stats, VoidId, VoidPulse} from "../types/types.js"
+import {Database, DropPulse, SeatId, Stats, VoidId, VoidPulse} from "../types.js"
 
 export class Space {
 	stats: Stats = {

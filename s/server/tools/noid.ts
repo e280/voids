@@ -1,5 +1,5 @@
 
-import {Id, Noid} from "../types/types.js"
+import {Id, Noid} from "../types.js"
 
 export function noid<T extends {id: Id}>(obj: T): Noid<T> {
 	const obj2: any = {...obj}

@@ -1,5 +1,5 @@
 
-import {Privileges, Role} from "../types/types.js"
+import {Privileges, Role} from "../types.js"
 
 export function resolvePrivileges(roles: Role[]) {
 	const privileges: Privileges = {

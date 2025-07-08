@@ -11,11 +11,11 @@
 		"s"
 	],
 	"dependencies": {
-		"@benev/slate": "^0.3.3",
+		"@benev/slate": "^0.3.9",
 		"@e280/authlocal": "^0.2.0-27",
 		"@e280/kv": "^0.0.0-12",
-		"@e280/renraku": "^0.5.0-18",
-		"@e280/stz": "^0.0.0-23"
+		"@e280/renraku": "^0.5.0-19",
+		"@e280/stz": "^0.0.0-28"
 	},
 	"devDependencies": {
 		"@benev/turtle": "^0.6.12",

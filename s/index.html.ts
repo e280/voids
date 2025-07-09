@@ -36,7 +36,7 @@ export default template(async basic => {
 			})}
 		`,
 		body: html`
-			<h1>voids</h1>
+			<voids-app></voids-app>
 		`,
 	})
 })

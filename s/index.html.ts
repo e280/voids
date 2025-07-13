@@ -1,43 +1,28 @@
 
-import {template, html, easypage, headScripts, git_commit_hash, read_file, read_json, unsanitized, renderSocialCard} from "@benev/turtle"
+import {temple, html} from "@e280/scute"
 
 const domain = "voids.e280.org"
 const favicon = "/assets/favicon.png"
-const version = (await read_json("package.json")).version
 
-export default template(async basic => {
-	const path = basic.path(import.meta.url)
-	const hash = await git_commit_hash()
-	const faviconVersioned = await path.version.root(favicon)
+export default temple.page(import.meta.url, async orb => ({
+	title: "voids",
+	css: "app/main.css",
+	dark: true,
+	favicon,
+	head: html`
+		<script type=module src="${orb.hashurl("app/main.bundle.js")}"></script>
+	`,
 
-	return easypage({
-		path,
-		dark: true,
+	socialCard: {
+		themeColor: "#d633fc",
+		siteName: domain,
 		title: "voids",
-		head: html`
-			<meta data-commit-hash="${hash}"/>
-			<meta data-version="${version}"/>
+		description: "better encrypted group chats",
+		image: `https://${domain}${favicon}`,
+	},
 
-			<style>${unsanitized(await read_file("x/app/main.css"))}</style>
-			<link rel="icon" href="${faviconVersioned}"/>
-
-			${renderSocialCard({
-				themeColor: "#d633fc",
-				siteName: domain,
-				title: "voids",
-				description: "better encrypted group chats",
-				image: `https://${domain}${favicon}`,
-			})}
-
-			${headScripts({
-				devModulePath: await path.version.local("app/main.bundle.js"),
-				prodModulePath: await path.version.local("app/main.bundle.min.js"),
-				importmapContent: await read_file("x/importmap.json"),
-			})}
-		`,
-		body: html`
-			<voids-app></voids-app>
-		`,
-	})
-})
+	body: html`
+		<voids-app></voids-app>
+	`,
+}))
 

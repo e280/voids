@@ -1,17 +1,8 @@
 
-@layer vars, core, page;
+import {css} from "@benev/slate"
+export default css`
 
-@layer vars {
-	:root {
-		--prime: #d633fc;
-		--accent: #6a33b5;
-		--bg: #11002a;
-		--link: cyan;
-
-		--selection-bg: #f70;
-		--selection-color: white;
-	}
-}
+@layer core, view;
 
 @layer core {
 	* {
@@ -52,27 +43,5 @@
 	}
 }
 
-@layer page {
-	:root {
-		color-scheme: dark;
-
-		font-size: 21px;
-		font-family: sans-serif;
-
-		background: var(--bg);
-		color: color-mix(in lch, var(--prime), #fff8 50%);
-	}
-
-	html, body {
-		width: 100%;
-		height: 100%;
-	}
-
-	voids-app {
-		position: absolute;
-		inset: 0;
-		margin: auto;
-		outline: 2px solid var(--prime);
-	}
-}
+`
 

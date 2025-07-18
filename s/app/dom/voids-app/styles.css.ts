@@ -8,15 +8,48 @@ export default css`@layer view {
 	--x: 0%;
 }
 
+.harness {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+
+	display: flex;
+	flex-direction: column;
+
+	.carousel {
+		flex: 1 1 auto;
+		position: relative;
+		overflow: hidden;
+
+		--y: 0%;
+		display: flex;
+		width: 100%;
+		transform: translateX(calc(-1 * var(--y)));
+		transition: transform 400ms ease;
+
+		section {
+			width: 100%;
+		}
+	}
+
+	nav {
+		display: flex;
+		background: #0008;
+		border-top: 2px solid #fff1;
+		gap: 0.5em;
+		padding: 0.5em;
+		justify-content: center;
+		button {
+			padding: 0.5em;
+		}
+	}
+}
+
 .bg {
 	position: absolute;
 	overflow: hidden;
 	inset: 0;
-	--x: 1%;
-
-	&:hover {
-		--x: 100%;
-	}
+	--x: 0%;
 
 	img {
 		display: block;
@@ -27,7 +60,7 @@ export default css`@layer view {
 		object-fit: cover;
 
 		transform: translateX(0%);
-		transition: transform 900ms ease;
+		transition: transform 400ms ease;
 
 		& + img {
 			mix-blend-mode: screen;

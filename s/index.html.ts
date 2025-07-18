@@ -1,23 +1,22 @@
 
-import {temple, html} from "@e280/scute"
+import {ssg, html} from "@e280/scute"
 
+const title = "voids"
 const domain = "voids.e280.org"
 const favicon = "/assets/favicon.png"
 
-export default temple.page(import.meta.url, async orb => ({
-	title: "voids",
-	css: "app/main.css",
-	dark: true,
+export default ssg.page(import.meta.url, async _orb => ({
+	title,
 	favicon,
-	head: html`
-		<script type=module src="${orb.hashurl("app/main.bundle.js")}"></script>
-	`,
+	dark: true,
+	css: "app/main.css",
+	js: "app/main.bundle.min.js",
 
 	socialCard: {
+		title,
+		description: "better encrypted group chats",
 		themeColor: "#d633fc",
 		siteName: domain,
-		title: "voids",
-		description: "better encrypted group chats",
 		image: `https://${domain}${favicon}`,
 	},
 

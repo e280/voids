@@ -1,7 +1,7 @@
 {
 	"private": true,
 	"name": "@e280/voids",
-	"version": "0.0.0-0",
+	"version": "0.0.0-1",
 	"description": "encrypted chat",
 	"license": "MIT",
 	"main": "./x/index.js",

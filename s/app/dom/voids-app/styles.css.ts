@@ -25,10 +25,13 @@ export default css`@layer view {
 		display: flex;
 		width: 100%;
 		transform: translateX(calc(-1 * var(--y)));
-		transition: transform 400ms ease;
+		transition: transform var(--anim) ease;
 
 		section {
 			width: 100%;
+			&[inert] {
+				opacity: 0.5;
+			}
 		}
 	}
 
@@ -36,11 +39,49 @@ export default css`@layer view {
 		display: flex;
 		background: #0008;
 		border-top: 2px solid #fff1;
-		gap: 0.5em;
-		padding: 0.5em;
 		justify-content: center;
+		flex-wrap: wrap;
+
 		button {
+			all: unset;
 			padding: 0.5em;
+			transition: all var(--anim) linear;
+			border-top: 3px solid transparent;
+			color: white;
+			background: #fff0;
+			-webkit-tap-highlight-color: transparent;
+
+			opacity: 0.5;
+
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+
+			&:not([disabled]) {
+				cursor: pointer;
+
+				&:is(:hover, :focus-visible) {
+					opacity: 1;
+				}
+			}
+
+			&[x-active] {
+				opacity: 1;
+				color: var(--prime-bright);
+				background: #fff1;
+				filter: drop-shadow(0 0 0.4em var(--prime));
+				border-top-color: currentColor;
+			}
+
+			> svg {
+				width: 1.6em;
+				height: 1.6em;
+			}
+
+			> span {
+				opacity: 0.5;
+				font-size: 0.5em;
+			}
 		}
 	}
 }
@@ -60,7 +101,7 @@ export default css`@layer view {
 		object-fit: cover;
 
 		transform: translateX(0%);
-		transition: transform 400ms ease;
+		transition: transform var(--anim) ease;
 
 		& + img {
 			mix-blend-mode: screen;

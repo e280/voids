@@ -3,7 +3,13 @@
 
 @layer vars {
 	:root {
+		--anim: 400ms;
+
 		--prime: #d633fc;
+		--prime-bright: color-mix(in lch, var(--prime), white 50%);
+		--prime-chill: color-mix(in lch, var(--prime), #fff8 50%);
+		--prime-dim: color-mix(in lch, var(--prime), transparent 50%);
+
 		--accent: #6a33b5;
 		--bg: #11002a;
 		--link: cyan;
@@ -57,10 +63,10 @@
 		color-scheme: dark;
 
 		font-size: 21px;
-		font-family: sans-serif;
+		font-family: "Share Tech", sans-serif;
 
 		background: var(--bg);
-		color: color-mix(in lch, var(--prime), #fff8 50%);
+		color: var(--prime-chill);
 	}
 
 	html, body {
@@ -73,6 +79,33 @@
 		inset: 0;
 		margin: auto;
 		outline: 2px solid var(--prime);
+
+		> section {
+			display: flex;
+			flex-direction: column;
+			gap: 0.2em;
+			height: 100%;
+			justify-content: center;
+			align-items: center;
+
+			padding: 0.5em;
+			text-align: center;
+
+			h1 {
+				font-family: "Bitcount", sans-serif;
+				font-size: 3em;
+				color: color-mix(in lch, var(--prime), white 50%);
+				text-shadow:
+					0 0 0.5em var(--prime),
+					0 0 2em var(--prime),
+					0 0 2em var(--prime);
+			}
+
+			.version {
+				font-family: "Bitcount", sans-serif;
+				font-size: 1.4em;
+			}
+		}
 	}
 }
 

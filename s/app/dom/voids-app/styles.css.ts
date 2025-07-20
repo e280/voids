@@ -8,6 +8,8 @@ export default css`@layer view {
 }
 
 .harness {
+	user-select: none;
+
 	position: absolute;
 	inset: 0;
 	z-index: 1;
@@ -15,10 +17,9 @@ export default css`@layer view {
 	display: flex;
 	flex-direction: column;
 
-	touch-action: none;
-	user-select: none;
-
 	.carousel {
+		touch-action: none;
+
 		flex: 1 1 auto;
 		position: relative;
 		overflow: hidden;

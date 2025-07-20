@@ -86,12 +86,11 @@ export const getVoidsApp = (context: Context) => shadowComponent(use => {
 	const pointermove = (event: PointerEvent) => {
 		const d = drag.value
 		if (d) {
-			const target = event.currentTarget as HTMLElement
-			const containerWidth = target.offsetWidth
+			const containerWidth = window.innerWidth
 			const fraction = -(event.movementX / containerWidth)
 
 			currentPosition.value = Math.max(0, Math.min(panels.length - 1, (
-				currentPosition.value + fraction
+				currentPosition.value + (fraction * 1.5)
 			)))
 
 			currentIndex.value = Math.round(currentPosition.value)
@@ -112,14 +111,13 @@ export const getVoidsApp = (context: Context) => shadowComponent(use => {
 			<img alt="" src="/assets/space-02.avif"/>
 		</div>
 
-		<div
-			class=harness
-			@pointerdown="${pointerdown}"
-			@pointermove="${pointermove}"
-			@pointerup="${pointerup}"
-			@blur="${pointerup}">
-
-			<div class=carousel style="${`width: ${panels.length * 100}%; --bravo: ${bravo}%;`}">
+		<div class=harness>
+			<div class=carousel
+				style="${`width: ${panels.length * 100}%; --bravo: ${bravo}%;`}"
+				@pointerdown="${pointerdown}"
+				@pointermove="${pointermove}"
+				@pointerup="${pointerup}"
+				@blur="${pointerup}">
 				${panels.map(({render}, index) => html`
 					<section ?inert="${index !== currentIndex.value}">
 						${render()}

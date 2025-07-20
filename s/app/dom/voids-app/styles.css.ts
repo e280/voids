@@ -5,7 +5,6 @@ export default css`@layer view {
 :host {
 	position: relative;
 	overflow: hidden;
-	--x: 0%;
 }
 
 .harness {
@@ -16,16 +15,18 @@ export default css`@layer view {
 	display: flex;
 	flex-direction: column;
 
+	touch-action: none;
+	user-select: none;
+
 	.carousel {
 		flex: 1 1 auto;
 		position: relative;
 		overflow: hidden;
 
-		--y: 0%;
+		--bravo: 0%;
 		display: flex;
 		width: 100%;
-		transform: translateX(calc(-1 * var(--y)));
-		transition: transform var(--anim) ease;
+		transform: translateX(calc(-1 * var(--bravo)));
 
 		section {
 			width: 100%;
@@ -90,7 +91,7 @@ export default css`@layer view {
 	position: absolute;
 	overflow: hidden;
 	inset: 0;
-	--x: 0%;
+	--alpha: 0%;
 
 	img {
 		display: block;
@@ -101,22 +102,21 @@ export default css`@layer view {
 		object-fit: cover;
 
 		transform: translateX(0%);
-		transition: transform var(--anim) ease;
 
 		& + img {
 			mix-blend-mode: screen;
 		}
 
 		&:nth-of-type(1) {
-			transform: translateX(calc(-1 * var(--x) * 0.08));
+			transform: translateX(calc(-1 * var(--alpha) * 0.08));
 		}
 
 		&:nth-of-type(2) {
-			transform: rotate(180deg) translateX(calc(1 * var(--x) * 0.16));
+			transform: rotate(180deg) translateX(calc(1 * var(--alpha) * 0.16));
 		}
 
 		&:nth-of-type(3) {
-			transform: translateX(calc(-1 * var(--x) * 0.32));
+			transform: translateX(calc(-1 * var(--alpha) * 0.32));
 		}
 	}
 }

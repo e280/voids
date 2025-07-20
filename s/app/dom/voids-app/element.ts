@@ -18,6 +18,7 @@ import {SettingsView} from "../panels/settings/view.js"
 export const getVoidsApp = (context: Context) => shadowComponent(use => {
 	use.styles(themeCss, stylesCss)
 
+	const currentPosition = use.signal(0)
 	const currentIndex = use.signal(0)
 
 	type Panel = {
@@ -58,18 +59,67 @@ export const getVoidsApp = (context: Context) => shadowComponent(use => {
 		currentIndex.value = index
 	}
 
-	const x = (currentIndex.value / (panels.length - 1)) * 100
-	const y = (currentIndex.value / panels.length) * 100
+	const drag = use.signal<null | {startClientX: number}>(null)
+
+	use.mount(() => {
+		let run = true
+		function animate() {
+			if (!run) return undefined
+			if (!drag.value) {
+				const diff = currentIndex.value - currentPosition.value
+				currentPosition.value += diff * 0.15
+			}
+			requestAnimationFrame(animate)
+		}
+		animate()
+		return () => { run = false }
+	})
+
+	const pointerdown = (event: PointerEvent) => {
+		drag.value = {
+			startClientX: event.clientX,
+		}
+		const target = event.currentTarget as HTMLElement
+		target.setPointerCapture(event.pointerId)
+	}
+
+	const pointermove = (event: PointerEvent) => {
+		const d = drag.value
+		if (d) {
+			const target = event.currentTarget as HTMLElement
+			const containerWidth = target.offsetWidth
+			const fraction = -(event.movementX / containerWidth)
+
+			currentPosition.value = Math.max(0, Math.min(panels.length - 1, (
+				currentPosition.value + fraction
+			)))
+
+			currentIndex.value = Math.round(currentPosition.value)
+		}
+	}
+
+	const pointerup = () => {
+		drag.value = null
+	}
+
+	const alpha = (currentPosition.value / (panels.length - 1)) * 100
+	const bravo = (currentPosition.value / panels.length) * 100
 
 	return html`
-		<div class=bg style="${`--x: ${x}%;`}">
+		<div class=bg style="${`--alpha: ${alpha}%;`}">
 			<img alt="" src="/assets/space-01.avif"/>
 			<img alt="" src="/assets/space-02.avif"/>
 			<img alt="" src="/assets/space-02.avif"/>
 		</div>
 
-		<div class=harness>
-			<div class=carousel style="${`width: ${panels.length * 100}%; --y: ${y}%;`}">
+		<div
+			class=harness
+			@pointerdown="${pointerdown}"
+			@pointermove="${pointermove}"
+			@pointerup="${pointerup}"
+			@blur="${pointerup}">
+
+			<div class=carousel style="${`width: ${panels.length * 100}%; --bravo: ${bravo}%;`}">
 				${panels.map(({render}, index) => html`
 					<section ?inert="${index !== currentIndex.value}">
 						${render()}

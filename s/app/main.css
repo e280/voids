@@ -94,6 +94,7 @@
 			h1 {
 				font-family: "Bitcount", sans-serif;
 				font-size: 3em;
+				font-weight: normal;
 				color: color-mix(in lch, var(--prime), white 50%);
 				text-shadow:
 					0 0 0.5em var(--prime),

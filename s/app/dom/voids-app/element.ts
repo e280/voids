@@ -63,11 +63,14 @@ export const getVoidsApp = (context: Context) => shadowComponent(use => {
 
 	use.mount(() => {
 		let run = true
+		const lerp = 0.15
+		const epsilon = 0.01
 		function animate() {
 			if (!run) return undefined
 			if (!drag.value) {
 				const diff = currentIndex.value - currentPosition.value
-				currentPosition.value += diff * 0.15
+				if (Math.abs(diff) > epsilon)
+					currentPosition.value += diff * lerp
 			}
 			requestAnimationFrame(animate)
 		}

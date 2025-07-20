@@ -1,15 +1,17 @@
 
 import {Content, html, shadowComponent} from "@benev/slate"
+
 import themeCss from "../theme.css.js"
 import stylesCss from "./styles.css.js"
-import usersSvg from "../../icons/tabler/users.svg.js"
 import homeSvg from "../../icons/tabler/home.svg.js"
+import usersSvg from "../../icons/tabler/users.svg.js"
 import stack2Svg from "../../icons/tabler/stack-2.svg.js"
 import settingsSvg from "../../icons/tabler/settings.svg.js"
 import messageCircleSvg from "../../icons/tabler/message-circle.svg.js"
+
 import {Context} from "../../context.js"
-import {VoidsView} from "../panels/voids/view.js"
 import {ChatView} from "../panels/chat/view.js"
+import {VoidsView} from "../panels/voids/view.js"
 import {MembersView} from "../panels/members/view.js"
 import {SettingsView} from "../panels/settings/view.js"
 

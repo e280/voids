@@ -61,10 +61,6 @@ export default css`@layer view {
 
 			&:not([disabled]) {
 				cursor: pointer;
-
-				&:is(:hover, :focus-visible) {
-					opacity: 1;
-				}
 			}
 
 			&[x-active] {
@@ -85,6 +81,12 @@ export default css`@layer view {
 				font-size: 0.5em;
 			}
 		}
+	}
+}
+
+@media (hover: hover) {
+	nav button:not([disabled]):is(:hover, :focus-visible) {
+		opacity: 1;
 	}
 }
 
